@@ -1,66 +1,259 @@
+{% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalesManager - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'sales/css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
+        /* Estilos para o toggle de clientes */
+        .more-clients {
+            display: none;
         }
-        .header {
-            background-color: #0066cc;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        .more-clients.show {
+            display: block;
         }
-        .dashboard-container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+
+        .view-all-button .fa-chevron-down {
+            transition: transform 0.3s ease;
         }
-        .welcome-message {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        .logout-button {
-            background-color: transparent;
-            color: white;
-            border: 1px solid white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .logout-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+
+        .view-all-button.expanded .fa-chevron-down {
+            transform: rotate(180deg);
         }
     </style>
 </head>
+
 <body>
-    <div class="header">
-        <h1>SalesManager</h1>
-        <div>
-            <span>Olá, {{ user.username }}!</span>
-            <a href="{% url 'sales:logout' %}" class="logout-button">Sair</a>  <!-- CORRIGIDO -->
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div>
+                <h1>SalesManager</h1>
+                <span style="color: #808080;font-size: 14px;">Sistema de Vendas - Dashboard</span>
+            </div>
         </div>
-    </div>
-    
-    <div class="dashboard-container">
-        <div class="welcome-message">
-            <h2>Bem-vindo ao Dashboard</h2>
-            <p>Esta é a área protegida do sistema. Aqui você poderá gerenciar suas vendas.</p>
+
+        <div class="user-menu">
+            <div class="avatar-button" id="avatarButton">
+                {{ user.username|first|upper }}
+            </div>
+
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="user-profile">
+                    <div class="user-name">{{ user.username }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                </div>
+
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-user"></i> Meu Perfil
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-cog"></i> Configurações
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'sales:logout' %}" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
         </div>
-        
-        <p>Em breve adicionaremos mais funcionalidades aqui.</p>
-    </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-grid">
+            <div class="stat-box today-sales" style="background-color: var(--primary-color);">
+                <div class="stat-icon" style="top: 8%;">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <h3>Vendas <br>Hoje</h3>
+                <div class="stat-value">R$ {{ vendas_hoje.total|default:0|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="stat-box month-total" style="background-color:#28a745;">
+                <div class="stat-icon" style="top: 8%;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>Total Mês</h3><br>
+                <div class="stat-value">R$ {{ vendas_mes.total|default:0|floatformat:2|intcomma }}</div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Vendas por período</h3>
+                <button class="detailed-report-button">
+                    <i class="fas fa-chart-bar"></i> Relatório de Vendas
+                </button>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Clients -->
+        <div class="clients-container">
+            <div class="clients-header">
+                <h3>Top Clientes</h3>
+                <button class="view-all-button" id="viewAllButton">
+                    Ver todos <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <ul class="clients-list">
+                {% for cliente in top_clientes|slice:":3" %}
+                <li class="client-item">
+                    <span class="client-name">{{ cliente.cliente }}</span>
+                    <span class="client-amount">R$ {{ cliente.total|floatformat:2|intcomma }}</span>
+                </li>
+                {% empty %}
+                <li class="client-item">
+                    <span class="client-name">Nenhuma venda registrada</span>
+                </li>
+                {% endfor %}
+
+                <!-- Clientes adicionais (inicialmente ocultos) -->
+                <div class="more-clients" id="moreClients">
+                    {% for cliente in top_clientes|slice:"3:" %}
+                    <li class="client-item">
+                        <span class="client-name">{{ cliente.cliente }}</span>
+                        <span class="client-amount">R$ {{ cliente.total|floatformat:2|intcomma }}</span>
+                    </li>
+                    {% endfor %}
+                </div>
+            </ul>
+        </div>
+    </main>
+    <br>
+    <br>
+    <br>
+
+    <!-- Footer FIXO -->
+    <footer class="footer">
+        <nav class="footer-nav">
+            <a href="#" class="footer-button active">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'sales:lista_vendas' %}" class="footer-button">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Vendas</span>
+            </a>
+            <a href="{% url 'sales:cadastrar_venda' %}" class="footer-button">
+                <i class="fas fa-plus-circle"></i>
+                <span>Cadastrar</span>
+            </a>
+        </nav>
+    </footer>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const avatarButton = document.getElementById('avatarButton');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+
+            if (avatarButton && dropdownMenu) {
+                // Alternar visibilidade do menu
+                avatarButton.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('show');
+                });
+
+                // Fechar menu ao clicar fora
+                document.addEventListener('click', function (e) {
+                    if (!avatarButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+
+                // Prevenir que cliques no menu fechem ele
+                dropdownMenu.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        });
+
+        // Dados para o gráfico - CORRIGIDO
+        const salesData = {
+            labels: [`{% for label in chart_data.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}`],
+            values: [`{% for value in chart_data.values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}`]
+        };
+
+        // Debug: Verificar dados no console
+        console.log('Dados do gráfico:', salesData);
+
+        // Inicializar o gráfico
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+
+            // Verificar se há dados para exibir
+            if (salesData.values.length > 0 && salesData.values.some(v => v > 0)) {
+                const salesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: salesData.labels,
+                        datasets: [{
+                            label: 'Vendas (R$)',
+                            data: salesData.values,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return 'R$ ' + value.toLocaleString('pt-BR');
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Mensagem quando não há dados
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText('Nenhuma venda nos últimos 7 dias', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+
+            // Toggle para mostrar/ocultar clientes
+            const viewAllButton = document.getElementById('viewAllButton');
+            const moreClients = document.getElementById('moreClients');
+
+            if (viewAllButton && moreClients) {
+                viewAllButton.addEventListener('click', function () {
+                    moreClients.classList.toggle('show');
+                    this.classList.toggle('expanded');
+
+                    const icon = this.querySelector('i');
+                    if (moreClients.classList.contains('show')) {
+                        this.innerHTML = 'Ver menos <i class="fas fa-chevron-up"></i>';
+                    } else {
+                        this.innerHTML = 'Ver todos <i class="fas fa-chevron-down"></i>';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
+
 </html>

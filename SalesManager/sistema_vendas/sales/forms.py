@@ -2,7 +2,10 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from .models import UsuarioCustomizado
+from .models import UsuarioCustomizado, Venda
+from django.core.validators import MinValueValidator
+from decimal import Decimal
+import datetime
 
 
 class FormularioLogin(AuthenticationForm):
@@ -157,3 +160,50 @@ class FormularioRegistro(UserCreationForm):
             user.save()
         
         return user
+    
+
+class VendaForm(forms.ModelForm):
+    class Meta:
+        model = Venda
+        fields = ['cliente', 'quantidade', 'valor', 'data_venda']
+        widgets = {
+            'cliente': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite o nome do cliente',
+                'autofocus': True
+            }),
+            'quantidade': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Quantidade vendida',
+                'min': 1
+            }),
+            'valor': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0,00',
+                'step': '0.01',
+                'min': '0.01'
+            }),
+            'data_venda': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'value': datetime.date.today().strftime('%Y-%m-%d')
+            }),
+        }
+        labels = {
+            'cliente': 'Nome do Cliente',
+            'quantidade': 'Quantidade',
+            'valor': 'Valor (R$)',
+            'data_venda': 'Data da Venda'
+        }
+
+    def clean_quantidade(self):
+        quantidade = self.cleaned_data.get('quantidade')
+        if quantidade < 1:
+            raise forms.ValidationError("A quantidade deve ser pelo menos 1.")
+        return quantidade
+
+    def clean_valor(self):
+        valor = self.cleaned_data.get('valor')
+        if valor <= 0:
+            raise forms.ValidationError("O valor deve ser maior que zero.")
+        return valor

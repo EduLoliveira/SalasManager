@@ -2,25 +2,21 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import make_password
+from django.core.validators import MinValueValidator
+from django.conf import settings
+from decimal import Decimal
+
 
 class UsuarioCustomizado(AbstractUser):
-    # Campos padrão do AbstractUser já incluem:
-    # username, first_name, last_name, email, password, is_active, is_staff, is_superuser
-    # date_joined, last_login, groups, user_permissions
-    
-    # Telefone - campo adicional
     telefone = models.CharField(
-        max_length=15, 
+        max_length=15,
         blank=True,
         verbose_name=_('telefone'),
         help_text=_('Número de telefone para contato')
     )
-    
-    # Campos de data e hora
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name=_('data de criação'))
     data_atualizacao = models.DateTimeField(auto_now=True, verbose_name=_('data de atualização'))
-    
-    # SOBRESCREVA os related_name para groups e user_permissions para evitar conflitos
+
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name=_('groups'),
@@ -32,7 +28,6 @@ class UsuarioCustomizado(AbstractUser):
         related_name="usuario_customizado_set",
         related_query_name="usuario_customizado",
     )
-    
     user_permissions = models.ManyToManyField(
         'auth.Permission',
         verbose_name=_('user permissions'),
@@ -41,67 +36,73 @@ class UsuarioCustomizado(AbstractUser):
         related_name="usuario_customizado_permissions_set",
         related_query_name="usuario_customizado_permissions",
     )
-    
-    # Configurações de autenticação
+
     USERNAME_FIELD = 'username'
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
-    
+
     class Meta:
         verbose_name = _('usuário')
         verbose_name_plural = _('usuários')
         ordering = ['-data_criacao']
         db_table = 'sales_usuariocustomizado'
-    
+
     def __str__(self):
-        if self.first_name and self.last_name:
-            return f"{self.first_name} {self.last_name}"
-        return self.username
-    
-    def get_full_name(self):
-        """
-        Retorna o nome completo do usuário.
-        """
-        full_name = f"{self.first_name} {self.last_name}"
-        return full_name.strip() or self.username
-    
-    def get_short_name(self):
-        """
-        Retorna o primeiro nome do usuário.
-        """
-        return self.first_name or self.username
-    
+        return f"{self.first_name} {self.last_name}" if self.first_name and self.last_name else self.username
+
     def save(self, *args, **kwargs):
-        # Garante que o email seja sempre salvo em minúsculas
         if self.email:
             self.email = self.email.lower()
-        
-        # Se a senha foi modificada e não está hasheada, faz o hash
         if self.password and not self.password.startswith('pbkdf2_sha256$'):
             self.password = make_password(self.password)
-        
         super().save(*args, **kwargs)
-    
+
     @property
     def is_complete_profile(self):
-        """
-        Verifica se o perfil do usuário está completo.
-        """
         return all([self.first_name, self.last_name, self.email])
-    
+
     @property
     def telefone_formatado(self):
-        """
-        Retorna o telefone formatado.
-        """
         if not self.telefone or len(self.telefone) < 10:
             return self.telefone
-        
         telefone = ''.join(filter(str.isdigit, self.telefone))
-        
         if len(telefone) == 10:
             return f"({telefone[:2]}) {telefone[2:6]}-{telefone[6:]}"
         elif len(telefone) == 11:
             return f"({telefone[:2]}) {telefone[2:7]}-{telefone[7:]}"
-        
         return self.telefone
+
+
+class Venda(models.Model):
+    cliente = models.CharField(max_length=100, verbose_name="Nome do Cliente")
+    quantidade = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        verbose_name="Quantidade"
+    )
+    valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name="Valor (R$)"
+    )
+    data_venda = models.DateField(verbose_name="Data da Venda")
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendas"
+    )
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    baixada = models.BooleanField(default=False)
+    data_baixa = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Venda"
+        verbose_name_plural = "Vendas"
+        ordering = ['-data_venda', '-data_criacao']
+
+    def __str__(self):
+        return f"Venda para {self.cliente} - R$ {self.valor}"
+
+    def valor_total(self):
+        return self.quantidade * self.valor

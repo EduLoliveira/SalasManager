@@ -1,0 +1,345 @@
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a86ff;
+    --accent-color: #4895ef;
+    --dark-color: #3f37c9;
+    --light-color: #f8f9fa;
+    --vivid-purple: #7209b7;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--primary-color), var(--vivid-purple), var(--vivid-purple), var(--secondary-color));
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #333;
+}
+
+.register-container {
+    background-color: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 500px;
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.register-header h1 {
+    font-weight: 800;
+    color: var(--vivid-purple);
+    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.register-header p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.form-control {
+    padding: 0.85rem 1rem;
+    border: 2px solid #e6e6e6;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.35);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 2px solid #e6e6e6;
+    border-right: none;
+    color: var(--vivid-purple);
+}
+
+.form-control.with-icon {
+    border-left: none;
+}
+
+.form-check-input:checked {
+    background-color: var(--vivid-purple);
+    border-color: var(--vivid-purple);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(114, 9, 183, 0.25);
+}
+
+.btn-register-main {
+    background: var(--secondary-color);
+    border: none;
+    color: white;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: all 0.3s;
+    width: 100%;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+}
+
+.btn-register-main:hover {
+    background: var(--secondary-color);
+    transform: translateY(-2px);
+    color: white;
+    box-shadow: 0 6px 15px rgba(114, 9, 183, 0.4);
+}
+
+.links-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.login-link {
+    color: var(--vivid-purple);
+    text-decoration: none;
+    transition: color 0.3s;
+    font-weight: 600;
+}
+
+.login-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.btn-login {
+    background: transparent;
+    color: var(--vivid-purple);
+    border: 2px solid var(--vivid-purple);
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-login:hover {
+    background: var(--vivid-purple);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+}
+
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.password-toggle {
+    cursor: pointer;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--vivid-purple);
+    z-index: 5;
+}
+
+.password-container {
+    position: relative;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.step:not(:last-child):after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    width: 100%;
+    height: 2px;
+    background-color: #e6e6e6;
+    left: 50%;
+    z-index: 1;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e6e6e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.step.active .step-number {
+    background-color: var(--vivid-purple);
+    color: white;
+}
+
+.step-title {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.step.active .step-title {
+    color: var(--vivid-purple);
+    font-weight: 600;
+}
+
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.btn-next,
+.btn-prev {
+    background: transparent;
+    color: var(--vivid-purple);
+    border: 2px solid var(--vivid-purple);
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-next:hover,
+.btn-prev:hover {
+    background: var(--vivid-purple);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+}
+
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 0;
+}
+
+.step-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+/* --- INÍCIO DOS ESTILOS RESPONSIVOS --- */
+@media (max-width: 576px) {
+    body {
+        /* Permite que o corpo role em telas pequenas e adiciona um pouco de preenchimento */
+        align-items: flex-start;
+        padding: 1rem 0;
+    }
+
+    .register-container {
+        /* Reduz o preenchimento e a largura máxima para se ajustar a telas pequenas */
+        padding: 1.5rem;
+        max-width: 95%;
+        margin-top: 0;
+    }
+
+    .register-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .register-header h1 {
+        /* Diminui o tamanho da fonte do título principal */
+        font-size: 2rem;
+    }
+
+    .register-header p {
+        font-size: 1rem;
+    }
+
+    .step-indicator {
+        margin-bottom: 1.5rem;
+    }
+
+    .step-title {
+        /* Reduz o tamanho da fonte do título da etapa para evitar quebra de linha */
+        font-size: 0.75rem;
+    }
+
+    /* Ajusta a margem inferior para espaçamento consistente em telas móveis */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Etapa 1: Empilha o link e o botão verticalmente */
+    #step-1 .step-navigation {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #step-1 .login-link {
+        order: 2;
+        /* Move o link para baixo */
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    #step-1 .btn-next {
+        order: 1;
+        /* Move o botão "Próximo" para cima */
+    }
+
+    /* Etapa 2: Empilha os botões "Voltar" e "Criar Conta" */
+    #step-2 .step-navigation {
+        flex-direction: column-reverse;
+        /* Inverte a ordem para que "Criar Conta" fique por último */
+        align-items: stretch;
+        gap: 0.75rem;
+        /* Adiciona um espaço entre os botões */
+    }
+
+    #step-2 .btn-prev {
+        margin-bottom: 0;
+        /* Remove a margem original para usar 'gap' */
+    }
+}

@@ -1,330 +1,73 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalesManager - Login</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a86ff;
-            --accent-color: #4895ef;
-            --dark-color: #3f37c9;
-            --light-color: #f8f9fa;
-            --vivid-purple: #7209b7;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--primary-color), var(--vivid-purple), var(--vivid-purple), var(--secondary-color));
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #333;
-            padding: 15px;
-        }
-        
-        .login-container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 450px;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .login-header h1 {
-            font-weight: 800;
-            color: var(--vivid-purple);
-            margin-bottom: 0.5rem;
-            font-size: 2.2rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-        
-        .login-header p {
-            color: #6c757d;
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        
-        .form-control {
-            padding: 0.85rem 1rem;
-            border: 2px solid #e6e6e6;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-size: 16px;
-        }
-        
-        .form-control:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.35);
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border: 2px solid #e6e6e6;
-            border-right: none;
-            color: var(--vivid-purple);
-            padding: 0.85rem 1rem;
-        }
-        
-        .form-control.with-icon {
-            border-left: none;
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--vivid-purple);
-            border-color: var(--vivid-purple);
-        }
-        
-        .form-check-input:focus {
-            box-shadow: 0 0 0 0.25rem rgba(114, 9, 183, 0.25);
-        }
-        
-        .btn-login {
-            background: var(--secondary-color);
-            border: none;
-            color: white;
-            padding: 0.85rem;
-            border-radius: 8px;
-            font-weight: 700;
-            transition: all 0.3s;
-            width: 100%;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
-        }
-        
-        .btn-login:hover {
-            background: var(--secondary-color);
-            transform: translateY(-2px);
-            color: white;
-            box-shadow: 0 6px 15px rgba(114, 9, 183, 0.4);
-        }
-        
-        .links-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .forgot-password {
-            color: var(--vivid-purple);
-            text-decoration: none;
-            transition: color 0.3s;
-            font-weight: 600;
-            order: 2;
-        }
-        
-        .forgot-password:hover {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-        
-        .btn-register {
-            background: transparent;
-            color: var(--vivid-purple);
-            border: 2px solid var(--vivid-purple);
-            padding: 0.5rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-align: center;
-            display: block;
-            width: 100%;
-            order: 1;
-        }
-        
-        .btn-register:hover {
-            background: var(--vivid-purple);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
-        }
-        
-        .password-container {
-            position: relative;
-        }
-        
-        .password-toggle {
-            cursor: pointer;
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--vivid-purple);
-            z-index: 5;
-            background: white;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        .shake {
-            animation: shake 0.5s;
-        }
-
-        /* Estilos para mensagens do Django */
-        .alert-django {
-            animation: slideInDown 0.5s ease-out;
-            margin-bottom: 1.5rem;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-left: 4px solid transparent;
-        }
-
-        .alert-django.alert-success {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
-            color: #155724;
-            border-left-color: #28a745;
-        }
-
-        .alert-django.alert-danger {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-            color: #721c24;
-            border-left-color: #dc3545;
-        }
-
-        .alert-django .btn-close {
-            padding: 0.75rem;
-        }
-
-        @keyframes slideInDown {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Media Queries para responsividade */
-        @media (min-width: 576px) {
-            .login-container {
-                padding: 2.5rem;
-            }
-            
-            .login-header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .login-header p {
-                font-size: 1.1rem;
-            }
-            
-            .links-container {
-                flex-direction: row;
-            }
-            
-            .btn-register {
-                width: auto;
-            }
-        }
-        
-        @media (max-width: 400px) {
-            .login-container {
-                padding: 1.5rem;
-            }
-            
-            .login-header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .input-group-text, .form-control {
-                padding: 0.75rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'sales/css/login.css' %}">
 </head>
+
 <body>
     <div class="login-container">
         <div class="login-header">
             <h1>SalesManager</h1>
             <p>Acesse seu dashboard</p>
         </div>
-        
-        <!-- REMOVIDAS as divs de alerta JavaScript -->
-        <!-- ⬇️ APENAS mensagens do Django devem ficar -->
-        
+
         <!-- Mensagens do Django -->
         <div class="messages-container">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-django alert-dismissible fade show" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'danger' %}bi-exclamation-circle-fill{% else %}bi-info-circle-fill{% endif %} me-2"></i>
-                            <div>{{ message }}</div>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="alert alert-{{ message.tags }} alert-django alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'danger' %}bi-exclamation-circle-fill{% else %}bi-info-circle-fill{% endif %} me-2"></i>
+                        <div>{{ message }}</div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 {% endfor %}
             {% endif %}
         </div>
-        
+
         <form id="login-form" method="post" action="{% url 'sales:login' %}">
             {% csrf_token %}
-            
+
             <!-- Campo hidden para redirecionamento após login -->
             <input type="hidden" name="next" value="{{ next }}">
-            
+
             <!-- Campo de username -->
             <div class="mb-4">
                 <label for="id_username" class="form-label">Username ou Email</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input type="text" name="username" class="form-control with-icon {% if form.username.errors %}is-invalid{% endif %}" 
-                           id="id_username" placeholder="Seu username" required autofocus
-                           value="{% if form.username.value %}{{ form.username.value }}{% endif %}">
+                    <input type="text" name="username"
+                        class="form-control with-icon {% if form.username.errors %}is-invalid{% endif %}"
+                        id="id_username" placeholder="Seu username" required autofocus
+                        value="{% if form.username.value %}{{ form.username.value }}{% endif %}">
                 </div>
                 {% if form.username.errors %}
                 <div class="invalid-feedback d-block">
                     {% for error in form.username.errors %}
-                        {{ error }}
+                    {{ error }}
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
-            
+
             <!-- Campo de senha -->
             <div class="mb-4 password-container">
                 <label for="id_password" class="form-label">Senha</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                    <input type="password" name="password" class="form-control with-icon {% if form.password.errors %}is-invalid{% endif %}" 
-                           id="id_password" placeholder="Sua senha" required>
+                    <input type="password" name="password"
+                        class="form-control with-icon {% if form.password.errors %}is-invalid{% endif %}"
+                        id="id_password" placeholder="Sua senha" required>
                     <span class="password-toggle" onclick="togglePassword('id_password')">
                         <i class="bi bi-eye"></i>
                     </span>
@@ -332,21 +75,21 @@
                 {% if form.password.errors %}
                 <div class="invalid-feedback d-block">
                     {% for error in form.password.errors %}
-                        {{ error }}
+                    {{ error }}
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
-            
+
             <!-- Checkbox lembrar-me -->
             <div class="mb-4 form-check">
                 <input type="checkbox" name="remember_me" class="form-check-input" id="id_remember_me" {% if form.remember_me.value %}checked{% endif %}>
                 <label class="form-check-label" for="id_remember_me">Lembrar-me</label>
             </div>
-            
+
             <!-- Botão de submit -->
             <button type="submit" class="btn btn-login mb-4" id="login-button">Entrar</button>
-            
+
             <!-- Links adicionais -->
             <div class="links-container">
                 <a href="{% url 'sales:registro' %}" class="btn-register">Criar conta</a>
@@ -357,100 +100,8 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // ✅ APENAS FUNÇÕES ESSENCIAIS
-        
-        // 1. Função para mostrar/ocultar senha
-        function togglePassword(inputId) {
-            const passwordInput = document.getElementById(inputId);
-            const toggleIcon = passwordInput.parentElement.querySelector('.password-toggle i');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('bi-eye');
-                toggleIcon.classList.add('bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('bi-eye-slash');
-                toggleIcon.classList.add('bi-eye');
-            }
-        }
-        
-        // 2. Auto-dismiss para mensagens do Django
-        document.addEventListener('DOMContentLoaded', function() {
-            // Fechar mensagens automaticamente após alguns segundos
-            const alerts = document.querySelectorAll('.alert-django');
-            
-            alerts.forEach(alert => {
-                // Mensagens de sucesso: 5 segundos
-                if (alert.classList.contains('alert-success')) {
-                    setTimeout(() => {
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }, 5000);
-                }
-                
-                // Mensagens de erro: 8 segundos
-                if (alert.classList.contains('alert-danger')) {
-                    setTimeout(() => {
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }, 8000);
-                }
-            });
-            
-            // 3. Validação básica front-end (opcional)
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    const username = document.getElementById('id_username').value.trim();
-                    const password = document.getElementById('id_password').value;
-                    
-                    let hasError = false;
-                    
-                    // Validar username
-                    if (!username) {
-                        document.getElementById('id_username').classList.add('is-invalid');
-                        hasError = true;
-                    }
-                    
-                    // Validar senha
-                    if (!password) {
-                        document.getElementById('id_password').classList.add('is-invalid');
-                        hasError = true;
-                    }
-                    
-                    if (hasError) {
-                        e.preventDefault();
-                        return;
-                    }
-                    
-                    // Mostrar loading no botão
-                    const loginButton = document.getElementById('login-button');
-                    if (loginButton) {
-                        loginButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Entrando...';
-                        loginButton.disabled = true;
-                    }
-                });
-            }
-            
-            // 4. Remover validação quando usuário começar a digitar
-            const usernameInput = document.getElementById('id_username');
-            const passwordInput = document.getElementById('id_password');
-            
-            if (usernameInput) {
-                usernameInput.addEventListener('input', function() {
-                    this.classList.remove('is-invalid');
-                });
-            }
-            
-            if (passwordInput) {
-                passwordInput.addEventListener('input', function() {
-                    this.classList.remove('is-invalid');
-                });
-            }
-        });
-    </script>
+    <script src="{% static 'sales/js/login.js' %}"></script>
+
 </body>
+
 </html>

@@ -87,14 +87,22 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = 'pt-br'  # Corrigido: era 'pt-ubr'
-TIME_ZONE = 'America/Sao_Paulo'  # Alterado para fuso horário do Brasil
+LANGUAGE_CODE = 'pt-br' 
+TIME_ZONE = 'America/Sao_Paulo'  
 USE_I18N = True
 USE_TZ = True
+# settings.py
+from django.conf import settings
 
+if 'django.contrib.humanize' not in settings.INSTALLED_APPS:
+    settings.INSTALLED_APPS += ['django.contrib.humanize']
+    
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Para collectstatic
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
