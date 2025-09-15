@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesManager - Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #0066cc;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dashboard-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .welcome-message {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .logout-button {
+            background-color: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SalesManager</h1>
+        <div>
+            <span>Olá, {{ user.username }}!</span>
+            <a href="{% url 'sales:logout' %}" class="logout-button">Sair</a>  <!-- CORRIGIDO -->
+        </div>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="welcome-message">
+            <h2>Bem-vindo ao Dashboard</h2>
+            <p>Esta é a área protegida do sistema. Aqui você poderá gerenciar suas vendas.</p>
+        </div>
+        
+        <p>Em breve adicionaremos mais funcionalidades aqui.</p>
+    </div>
+</body>
+</html>

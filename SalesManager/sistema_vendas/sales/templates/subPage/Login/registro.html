@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesManager - Criar Conta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a86ff;
+            --accent-color: #4895ef;
+            --dark-color: #3f37c9;
+            --light-color: #f8f9fa;
+            --vivid-purple: #7209b7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--vivid-purple), var(--vivid-purple), var(--secondary-color));
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .register-container {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-header h1 {
+            font-weight: 800;
+            color: var(--vivid-purple);
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .register-header p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            padding: 0.85rem 1rem;
+            border: 2px solid #e6e6e6;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.35);
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border: 2px solid #e6e6e6;
+            border-right: none;
+            color: var(--vivid-purple);
+        }
+
+        .form-control.with-icon {
+            border-left: none;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--vivid-purple);
+            border-color: var(--vivid-purple);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(114, 9, 183, 0.25);
+        }
+
+        .btn-register-main {
+            background: var(--secondary-color);
+            border: none;
+            color: white;
+            padding: 0.85rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+        }
+
+        .btn-register-main:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            color: white;
+            box-shadow: 0 6px 15px rgba(114, 9, 183, 0.4);
+        }
+
+        .links-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+
+        .login-link {
+            color: var(--vivid-purple);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 600;
+        }
+
+        .login-link:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            background: transparent;
+            color: var(--vivid-purple);
+            border: 2px solid var(--vivid-purple);
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            background: var(--vivid-purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+        }
+
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+
+        .password-toggle {
+            cursor: pointer;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--vivid-purple);
+            z-index: 5;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .step:not(:last-child):after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            height: 2px;
+            background-color: #e6e6e6;
+            left: 50%;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #e6e6e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step.active .step-number {
+            background-color: var(--vivid-purple);
+            color: white;
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .step.active .step-title {
+            color: var(--vivid-purple);
+            font-weight: 600;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .btn-next,
+        .btn-prev {
+            background: transparent;
+            color: var(--vivid-purple);
+            border: 2px solid var(--vivid-purple);
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-next:hover,
+        .btn-prev:hover {
+            background: var(--vivid-purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding: 0;
+        }
+
+        .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+
+        /* --- INÍCIO DOS ESTILOS RESPONSIVOS --- */
+        @media (max-width: 576px) {
+            body {
+                /* Permite que o corpo role em telas pequenas e adiciona um pouco de preenchimento */
+                align-items: flex-start;
+                padding: 1rem 0;
+            }
+
+            .register-container {
+                /* Reduz o preenchimento e a largura máxima para se ajustar a telas pequenas */
+                padding: 1.5rem;
+                max-width: 95%;
+                margin-top: 0;
+            }
+
+            .register-header {
+                margin-bottom: 1.5rem;
+            }
+
+            .register-header h1 {
+                /* Diminui o tamanho da fonte do título principal */
+                font-size: 2rem;
+            }
+
+            .register-header p {
+                font-size: 1rem;
+            }
+
+            .step-indicator {
+                margin-bottom: 1.5rem;
+            }
+            
+            .step-title {
+                /* Reduz o tamanho da fonte do título da etapa para evitar quebra de linha */
+                font-size: 0.75rem;
+            }
+            
+            /* Ajusta a margem inferior para espaçamento consistente em telas móveis */
+            .mb-4 {
+                margin-bottom: 1.5rem !important;
+            }
+
+            /* Etapa 1: Empilha o link e o botão verticalmente */
+            #step-1 .step-navigation {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #step-1 .login-link {
+                order: 2; /* Move o link para baixo */
+                text-align: center;
+                margin-top: 1rem;
+            }
+
+            #step-1 .btn-next {
+                order: 1; /* Move o botão "Próximo" para cima */
+            }
+
+            /* Etapa 2: Empilha os botões "Voltar" e "Criar Conta" */
+            #step-2 .step-navigation {
+                flex-direction: column-reverse; /* Inverte a ordem para que "Criar Conta" fique por último */
+                align-items: stretch;
+                gap: 0.75rem; /* Adiciona um espaço entre os botões */
+            }
+            #step-2 .btn-prev {
+                margin-bottom: 0; /* Remove a margem original para usar 'gap' */
+            }
+        }
+        /* --- FIM DOS ESTILOS RESPONSIVOS --- */
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>SalesManager</h1>
+            <p>Crie sua conta</p>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-title">Informações Pessoais</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-title">Credenciais</div>
+            </div>
+        </div>
+
+        <div class="alert-error" style="display: none;" id="error-message">
+            </div>
+
+        <form id="registration-form" method="post" action="{% url 'sales:registro' %}">
+            {% csrf_token %}
+            <div class="form-step active" id="step-1">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="first_name" class="form-label">Nome</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" name="first_name" class="form-control with-icon" id="first_name"
+                                placeholder="Seu nome" required>
+                        </div>
+                        <div class="text-danger" id="first_name_error"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label for="last_name" class="form-label">Sobrenome</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" name="last_name" class="form-control with-icon" id="last_name"
+                                placeholder="Seu sobrenome" required>
+                        </div>
+                        <div class="text-danger" id="last_name_error"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="email" class="form-label">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                        <input type="email" name="email" class="form-control with-icon" id="email"
+                            placeholder="Seu email" required>
+                    </div>
+                    <div class="text-danger" id="email_error"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="telefone" class="form-label">Telefone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+                        <input type="tel" name="telefone" class="form-control with-icon" id="telefone"
+                            placeholder="Seu telefone" required>
+                    </div>
+                    <div class="text-danger" id="telefone_error"></div>
+                </div>
+
+                <div class="step-navigation">
+                    <a href="{% url 'sales:login' %}" class="login-link">Já tem uma conta?</a>
+                    <button type="button" class="btn-next" id="next-to-step-2">Próximo</button>
+                </div>
+            </div>
+
+            <div class="form-step" id="step-2">
+                <div class="mb-4">
+                    <label for="username" class="form-label">Username *</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-badge-fill"></i></span>
+                        <input type="text" name="username" class="form-control with-icon" id="username"
+                            placeholder="Seu username" required>
+                    </div>
+                    <div class="form-text">Obrigatório. Letras, números e sinal apenas.
+                    </div>
+                    <div class="text-danger" id="username_error"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password1" class="form-label">Senha *</label>
+                    <div class="password-container">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" name="password1" class="form-control with-icon" id="password1"
+                                placeholder="Sua senha" required>
+                        </div>
+                        <span class="password-toggle" onclick="togglePassword('password1')">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    <div class="text-danger" id="password1_error"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password2" class="form-label">Confirmação de Senha *</label>
+                    <div class="password-container">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" name="password2" class="form-control with-icon" id="password2"
+                                placeholder="Confirme sua senha" required>
+                        </div>
+                        <span class="password-toggle" onclick="togglePassword('password2')">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    <div class="text-danger" id="password2_error"></div>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input type="checkbox" name="remember_me" class="form-check-input" id="remember_me" style="border-color: black;">
+                    <label class="form-check-label" for="remember_me">Lembrar-me</label>
+                </div>
+
+                <div class="step-navigation">
+                    <button type="button" class="btn-prev" id="prev-to-step-1"
+                        style="margin-bottom: 0.6rem;">Voltar</button>
+                    <button type="submit" class="btn-register-main">Criar Conta</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Função para alternar entre as etapas do formulário
+        function goToStep(stepNumber) {
+            // Esconder todas as etapas
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.classList.remove('active');
+            });
+
+            // Mostrar a etapa atual
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+
+            // Atualizar o indicador de etapas
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+                if (parseInt(step.getAttribute('data-step')) === stepNumber) {
+                    step.classList.add('active');
+                }
+            });
+        }
+
+        // Adicionar event listeners para os botões de navegação
+        document.getElementById('next-to-step-2').addEventListener('click', function () {
+            // Validar os campos da primeira etapa antes de prosseguir
+            let isValid = true;
+
+            // Validar nome
+            const firstName = document.getElementById('first_name').value;
+            if (!firstName) {
+                document.getElementById('first_name_error').textContent = 'Por favor, informe seu nome.';
+                isValid = false;
+                document.getElementById('first_name').focus();
+            } else {
+                document.getElementById('first_name_error').textContent = '';
+            }
+
+            // Validar sobrenome
+            const lastName = document.getElementById('last_name').value;
+            if (!lastName) {
+                document.getElementById('last_name_error').textContent = 'Por favor, informe seu sobrenome.';
+                isValid = false;
+                if (isValid) document.getElementById('last_name').focus();
+            } else {
+                document.getElementById('last_name_error').textContent = '';
+            }
+
+            // Validar email
+            const email = document.getElementById('email').value;
+            if (!email) {
+                document.getElementById('email_error').textContent = 'Por favor, informe seu email.';
+                isValid = false;
+                if (isValid) document.getElementById('email').focus();
+            } else if (!isValidEmail(email)) {
+                document.getElementById('email_error').textContent = 'Por favor, informe um email válido.';
+                isValid = false;
+                if (isValid) document.getElementById('email').focus();
+            } else {
+                document.getElementById('email_error').textContent = '';
+            }
+
+            // Validar telefone
+            const telefone = document.getElementById('telefone').value;
+            if (!telefone) {
+                document.getElementById('telefone_error').textContent = 'Por favor, informe seu telefone.';
+                isValid = false;
+                if (isValid) document.getElementById('telefone').focus();
+            } else {
+                document.getElementById('telefone_error').textContent = '';
+            }
+
+            if (isValid) {
+                goToStep(2);
+            }
+        });
+
+        document.getElementById('prev-to-step-1').addEventListener('click', function () {
+            goToStep(1);
+        });
+
+        // Função para validar email
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Função para mostrar/ocultar senha
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = passwordInput.parentElement.nextElementSibling.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye');
+                toggleIcon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye-slash');
+                toggleIcon.classList.add('bi-eye');
+            }
+        }
+
+        // Validação do formulário completo no envio
+        document.getElementById('registration-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            let isValid = true;
+            let firstErrorField = null;
+
+            // Validar username
+            const username = document.getElementById('username').value;
+            if (!username) {
+                document.getElementById('username_error').textContent = 'Por favor, informe um username.';
+                isValid = false;
+                if (!firstErrorField) firstErrorField = document.getElementById('username');
+            } else {
+                document.getElementById('username_error').textContent = '';
+            }
+
+            // Validar senha
+            const password1 = document.getElementById('password1').value;
+            if (!password1) {
+                document.getElementById('password1_error').textContent = 'Por favor, informe uma senha.';
+                isValid = false;
+                if (!firstErrorField) firstErrorField = document.getElementById('password1');
+            } else if (password1.length < 8) {
+                document.getElementById('password1_error').textContent = 'A senha deve ter pelo menos 8 caracteres.';
+                isValid = false;
+                if (!firstErrorField) firstErrorField = document.getElementById('password1');
+            } else {
+                document.getElementById('password1_error').textContent = '';
+            }
+
+            // Validar confirmação de senha
+            const password2 = document.getElementById('password2').value;
+            if (!password2) {
+                document.getElementById('password2_error').textContent = 'Por favor, confirme sua senha.';
+                isValid = false;
+                if (!firstErrorField) firstErrorField = document.getElementById('password2');
+            } else if (password1 !== password2) {
+                document.getElementById('password2_error').textContent = 'As senhas não coincidem.';
+                isValid = false;
+                if (!firstErrorField) firstErrorField = document.getElementById('password2');
+            } else {
+                document.getElementById('password2_error').textContent = '';
+            }
+
+            if (!isValid && firstErrorField) {
+                firstErrorField.focus();
+                return;
+            }
+
+            if (isValid) {
+                // Simular envio bem-sucedido do formulário
+                alert('Conta criada com sucesso! Redirecionando para o login...');
+                // Aqui você enviaria o formulário para o servidor
+                this.submit();
+            }
+        });
+    </script>
+</body>
+
+</html>
