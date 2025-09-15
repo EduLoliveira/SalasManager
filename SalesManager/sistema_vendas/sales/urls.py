@@ -11,6 +11,7 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard-vendas/', views.relatorio_vendas, name='relatorio_vendas'),
     
     #CheckVenda
     path('check_venda_session/', views.check_venda_session, name='check_venda_session'),
@@ -21,4 +22,5 @@ urlpatterns = [
     path('listagem-venda/', views.lista_vendas, name='lista_vendas'),
     path('baixar-venda/<int:venda_id>/', views.baixar_venda, name='baixar_venda'),
     path('exportar-vendas/', views.exportar_vendas_csv, name='exportar_vendas'),
+    path('api/cliente-compras/', views.cliente_compras_api, name='cliente_compras_api'),
 ]

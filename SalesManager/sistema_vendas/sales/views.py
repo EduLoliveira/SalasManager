@@ -175,21 +175,46 @@ def dashboard_view(request):
             usuario=usuario
         ).values('cliente').annotate(
             total=Sum('valor'),
+            quantidade=Count('id'),
             ultima_compra=Max('data_venda')
-        ).order_by('-ultima_compra', '-total')[:5])
+        ).order_by('-total')[:10])
     
     def get_dados_grafico():
-        dados = {'labels': [], 'values': []}
+        dados = {
+            'labels': [], 
+            'quantidade': [],
+            'lucro': []
+        }
+        
+        # Mapeamento de dias da semana em português
+        dias_semana_pt = {
+            'Mon': 'Seg',
+            'Tue': 'Ter',
+            'Wed': 'Qua',
+            'Thu': 'Qui',
+            'Fri': 'Sex',
+            'Sat': 'Sáb',
+            'Sun': 'Dom'
+        }
+        
         for i in range(6, -1, -1):
             data = hoje - timedelta(days=i)
+            dia_semana_en = data.strftime('%a')  # Retorna Mon, Tue, Wed, etc.
+            dia_semana_pt = dias_semana_pt.get(dia_semana_en, dia_semana_en)
+            
+            # Buscar quantidade de vendas e valor total para o dia
             vendas_dia = Venda.objects.filter(
                 data_venda=data,
                 usuario=usuario
-            ).aggregate(total=Sum('valor'))
-            total_dia = vendas_dia['total'] or Decimal('0.00')
+            ).aggregate(
+                total=Sum('valor'),
+                quantidade=Count('id')
+            )
             
-            dados['labels'].append(data.strftime('%d/%m'))
-            dados['values'].append(float(total_dia))
+            dados['labels'].append(dia_semana_pt)
+            dados['quantidade'].append(vendas_dia['quantidade'] or 0)
+            dados['lucro'].append(float(vendas_dia['total'] or Decimal('0.00')))
+        
         return dados
     
     # Executar consultas em paralelo para melhor performance
@@ -204,12 +229,19 @@ def dashboard_view(request):
         top_clientes = futuro_top_clientes.result()
         chart_data = futuro_dados_grafico.result()
     
+    # Converter para JSON seguro para o template
+    chart_data_json = {
+        'labels': chart_data['labels'],
+        'quantidade': chart_data['quantidade'],
+        'lucro': chart_data['lucro']
+    }
+    
     context = {
         'user': usuario,
         'vendas_hoje': vendas_hoje,
         'vendas_mes': vendas_mes,
         'top_clientes': top_clientes,
-        'chart_data': chart_data
+        'chart_data': chart_data_json
     }
     
     return render(request, 'subPage/Home/dashboard.html', context)
@@ -261,8 +293,8 @@ def lista_vendas(request):
     # Aplicar filtros baseados nos parâmetros da URL
     if busca:
         vendas = vendas.filter(
-            Q(cliente__icontains=busca) |
-            Q(descricao__icontains=busca)  # REMOVIDO: Q(produto__icontains=busca) - campo não existe
+            Q(cliente__icontains=busca)
+            # REMOVIDO: Q(descricao__icontains=busca) - campo não existe
         )
     
     # Filtro de status (ativas/baixadas/todas)
@@ -279,9 +311,7 @@ def lista_vendas(request):
     # Filtro por período
     if data_inicio:
         try:
-            data_inicio_obj = timezone.make_aware(
-                datetime.strptime(data_inicio, '%Y-%m-%d')
-            )
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__gte=data_inicio_obj)
         except ValueError:
             logger.warning(f"Data início inválida: {data_inicio}")
@@ -289,9 +319,7 @@ def lista_vendas(request):
     
     if data_fim:
         try:
-            data_fim_obj = timezone.make_aware(
-                datetime.strptime(data_fim, '%Y-%m-%d')
-            ) + timedelta(days=1) - timedelta(seconds=1)
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__lte=data_fim_obj)
         except ValueError:
             logger.warning(f"Data fim inválida: {data_fim}")
@@ -362,8 +390,8 @@ def exportar_vendas_csv(request):
     
     if busca:
         vendas = vendas.filter(
-            Q(cliente__icontains=busca) |
-            Q(descricao__icontains=busca)  # REMOVIDO: Q(produto__icontains=busca) - campo não existe
+            Q(cliente__icontains=busca)
+            # REMOVIDO: Q(descricao__icontains=busca) - campo não existe
         )
     
     if status == 'baixadas':
@@ -376,9 +404,7 @@ def exportar_vendas_csv(request):
     
     if data_inicio:
         try:
-            data_inicio_obj = timezone.make_aware(
-                datetime.strptime(data_inicio, '%Y-%m-%d')
-            )
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__gte=data_inicio_obj)
         except ValueError:
             logger.warning(f"Data início inválida na exportação: {data_inicio}")
@@ -386,9 +412,7 @@ def exportar_vendas_csv(request):
     
     if data_fim:
         try:
-            data_fim_obj = timezone.make_aware(
-                datetime.strptime(data_fim, '%Y-%m-%d')
-            ) + timedelta(days=1) - timedelta(seconds=1)
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__lte=data_fim_obj)
         except ValueError:
             logger.warning(f"Data fim inválida na exportação: {data_fim}")
@@ -399,17 +423,165 @@ def exportar_vendas_csv(request):
     response['Content-Disposition'] = 'attachment; filename="vendas_exportadas.csv"'
     
     writer = csv.writer(response, delimiter=';')
-    # REMOVIDO: 'Produto' da lista de colunas
-    writer.writerow(['Data Venda', 'Cliente', 'Descrição', 'Valor', 'Status', 'Data Baixa'])
+    # REMOVIDO: 'Descrição' da lista de colunas (campo não existe)
+    writer.writerow(['Data Venda', 'Cliente', 'Quantidade', 'Valor', 'Status', 'Data Baixa'])
     
     for venda in vendas:
         writer.writerow([
             venda.data_venda.strftime('%d/%m/%Y') if venda.data_venda else '',
             venda.cliente,
-            venda.descricao,  # REMOVIDO: venda.produto
+            venda.quantidade,
             str(venda.valor).replace('.', ','),
             'Baixada' if venda.baixada else 'Ativa',
             venda.data_baixa.strftime('%d/%m/%Y') if venda.data_baixa else ''
         ])
     
     return response
+
+
+@login_required
+def relatorio_vendas(request):
+    usuario = request.user
+    hoje = timezone.now().date()
+    
+    # Filtros do relatório
+    periodo = request.GET.get('periodo', '7_dias')
+    status_filter = request.GET.get('status', 'todos')
+    
+    # Definir datas com base no período selecionado
+    if periodo == '7_dias':
+        data_inicio = hoje - timedelta(days=7)
+    elif periodo == '30_dias':
+        data_inicio = hoje - timedelta(days=30)
+    elif periodo == 'este_mes':
+        data_inicio = hoje.replace(day=1)
+    elif periodo == 'mes_anterior':
+        primeiro_dia_mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
+        ultimo_dia_mes_anterior = hoje.replace(day=1) - timedelta(days=1)
+        data_inicio = primeiro_dia_mes_anterior
+        data_fim = ultimo_dia_mes_anterior
+    else:
+        data_inicio = hoje - timedelta(days=7)
+    
+    # Consulta base
+    vendas = Venda.objects.filter(usuario=usuario, data_venda__gte=data_inicio)
+    
+    if periodo == 'mes_anterior':
+        vendas = vendas.filter(data_venda__lte=data_fim)
+    else:
+        vendas = vendas.filter(data_venda__lte=hoje)
+    
+    # Aplicar filtro de status
+    if status_filter == 'concluidas':
+        vendas = vendas.filter(baixada=True)
+    elif status_filter == 'pendentes':
+        vendas = vendas.filter(baixada=False)
+    
+    # Calcular métricas
+    total_vendas = vendas.count()
+    valor_total = vendas.aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    ticket_medio = valor_total / total_vendas if total_vendas > 0 else Decimal('0.00')
+    
+    # Vendas do mês atual para comparação
+    vendas_mes_atual = Venda.objects.filter(
+        usuario=usuario,
+        data_venda__gte=hoje.replace(day=1),
+        data_venda__lte=hoje
+    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    
+    # Vendas do mês anterior para crescimento
+    primeiro_dia_mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
+    ultimo_dia_mes_anterior = hoje.replace(day=1) - timedelta(days=1)
+    
+    vendas_mes_anterior = Venda.objects.filter(
+        usuario=usuario,
+        data_venda__gte=primeiro_dia_mes_anterior,
+        data_venda__lte=ultimo_dia_mes_anterior
+    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    
+    # Calcular crescimento
+    if vendas_mes_anterior > 0:
+        crescimento = ((vendas_mes_atual - vendas_mes_anterior) / vendas_mes_anterior) * 100
+    else:
+        crescimento = 100 if vendas_mes_atual > 0 else 0
+    
+    # Vendas recentes (últimas 10)
+    vendas_recentes = vendas.order_by('-data_venda', '-data_criacao')[:10]
+    
+    # Dados para o gráfico (últimos 7 dias)
+    dados_grafico = {
+        'labels': [],
+        'valores': []
+    }
+    
+    for i in range(6, -1, -1):
+        data = hoje - timedelta(days=i)
+        dia_semana = data.strftime('%a')
+        # Mapeamento para português
+        dias_map = {'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'}
+        dia_semana_pt = dias_map.get(dia_semana, dia_semana)
+        
+        vendas_dia = vendas.filter(data_venda=data).aggregate(
+            total=Sum('valor'),
+            quantidade=Count('id')
+        )
+        
+        dados_grafico['labels'].append(dia_semana_pt)
+        dados_grafico['valores'].append(float(vendas_dia['total'] or Decimal('0.00')))
+    
+    context = {
+        'total_vendas': total_vendas,
+        'valor_total': valor_total,
+        'ticket_medio': ticket_medio,
+        'crescimento': crescimento,
+        'vendas_recentes': vendas_recentes,
+        'dados_grafico': dados_grafico,
+        'periodo_selecionado': periodo,
+        'status_selecionado': status_filter,
+        'vendas_mes_atual': vendas_mes_atual,
+    }
+    
+    return render(request, 'subPage/Home/relatorio_vendas.html', context)
+
+@login_required
+def cliente_compras_api(request):
+    """API para obter dados das compras de um cliente específico"""
+    cliente_nome = request.GET.get('cliente', '')
+    
+    if not cliente_nome:
+        return JsonResponse({'error': 'Nome do cliente não fornecido'})
+    
+    # Buscar todas as vendas do cliente para o usuário atual
+    vendas = Venda.objects.filter(
+        usuario=request.user,
+        cliente__iexact=cliente_nome
+    ).order_by('-data_venda')
+    
+    if not vendas.exists():
+        return JsonResponse({'error': 'Nenhuma compra encontrada para este cliente'})
+    
+    # Calcular métricas
+    total_gasto = vendas.aggregate(total=Sum('valor'))['total'] or 0
+    quantidade_compras = vendas.count()
+    ticket_medio = total_gasto / quantidade_compras if quantidade_compras > 0 else 0
+    
+    # Formatar última compra
+    ultima_venda = vendas.first()
+    ultima_compra = ultima_venda.data_venda.strftime('%d/%m/%Y') if ultima_venda.data_venda else 'N/A'
+    
+    # Preparar lista das últimas compras
+    compras = []
+    for venda in vendas[:10]:  # Últimas 10 compras
+        compras.append({
+            'data': venda.data_venda.strftime('%d/%m/%Y') if venda.data_venda else 'N/A',
+            'valor': float(venda.valor)
+        })
+    
+    return JsonResponse({
+        'cliente': cliente_nome,
+        'total_gasto': float(total_gasto),
+        'quantidade_compras': quantidade_compras,
+        'ticket_medio': float(ticket_medio),
+        'ultima_compra': ultima_compra,
+        'compras': compras
+    })

@@ -27,6 +27,226 @@
         .view-all-button.expanded .fa-chevron-down {
             transform: rotate(180deg);
         }
+        
+        /* Estilos para o gráfico */
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .chart-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .legend-color.blue {
+            background-color: #4361ee;
+        }
+        
+        .legend-color.green {
+            background-color: #28a745;
+        }
+        
+        /* Estilos para a lista de clientes */
+        .client-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 0.4rem;
+            border-bottom: 2px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .client-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .client-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .client-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .client-date {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+        
+        .client-amount {
+            font-weight: 700;
+            color: #28a745;
+        }
+        
+        /* Estilos para o modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .client-summary {
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        
+        .summary-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .summary-value {
+            color: #28a745;
+            font-weight: 700;
+        }
+        
+        .purchases-list {
+            margin-top: 20px;
+        }
+        
+        .purchase-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        
+        .purchase-date {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .purchase-amount {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .no-purchases {
+            text-align: center;
+            color: #6c757d;
+            padding: 20px;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4361ee;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -91,12 +311,23 @@
         <div class="chart-container">
             <div class="chart-header">
                 <h3>Vendas por período</h3>
-                <button class="detailed-report-button">
+                <a href="{% url 'sales:relatorio_vendas' %}" class="detailed-report-button">
                     <i class="fas fa-chart-bar"></i> Relatório de Vendas
-                </button>
+                </a>
             </div>
             <div class="chart-wrapper">
                 <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+            
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-color blue"></div>
+                <span>Quantidade de Vendas</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color green"></div>
+                <span>Lucro (R$)</span>
             </div>
         </div>
 
@@ -104,31 +335,41 @@
         <div class="clients-container">
             <div class="clients-header">
                 <h3>Top Clientes</h3>
+                {% if top_clientes|length > 3 %}
                 <button class="view-all-button" id="viewAllButton">
                     Ver todos <i class="fas fa-chevron-down"></i>
                 </button>
+                {% endif %}
             </div>
             <ul class="clients-list">
-                {% for cliente in top_clientes|slice:":3" %}
-                <li class="client-item">
+            {% for cliente in top_clientes|slice:":3" %}
+            <li class="client-item" data-cliente="{{ cliente.cliente }}">
+                <div class="client-info">
                     <span class="client-name">{{ cliente.cliente }}</span>
+                    <span class="client-date">{{ cliente.quantidade }} compra(s)</span>
+                </div>
+                <span class="client-amount">R$ {{ cliente.total|floatformat:2|intcomma }}</span>
+            </li>
+            {% empty %}
+            <li class="client-item">
+                <span class="client-name">Nenhuma venda registrada</span>
+            </li>
+            {% endfor %}
+
+            <!-- Clientes adicionais (inicialmente ocultos) -->
+            {% if top_clientes|length > 3 %}
+            <div class="more-clients" id="moreClients">
+                {% for cliente in top_clientes|slice:"3:" %}
+                <li class="client-item" data-cliente="{{ cliente.cliente }}">
+                    <div class="client-info">
+                        <span class="client-name">{{ cliente.cliente }}</span>
+                        <span class="client-date">{{ cliente.quantidade }} compra(s)</span>
+                    </div>
                     <span class="client-amount">R$ {{ cliente.total|floatformat:2|intcomma }}</span>
                 </li>
-                {% empty %}
-                <li class="client-item">
-                    <span class="client-name">Nenhuma venda registrada</span>
-                </li>
                 {% endfor %}
-
-                <!-- Clientes adicionais (inicialmente ocultos) -->
-                <div class="more-clients" id="moreClients">
-                    {% for cliente in top_clientes|slice:"3:" %}
-                    <li class="client-item">
-                        <span class="client-name">{{ cliente.cliente }}</span>
-                        <span class="client-amount">R$ {{ cliente.total|floatformat:2|intcomma }}</span>
-                    </li>
-                    {% endfor %}
-                </div>
+            </div>
+            {% endif %}
             </ul>
         </div>
     </main>
@@ -154,97 +395,57 @@
         </nav>
     </footer>
 
-    <script>
+    <!-- Modal para exibir resumo do cliente -->
+    <div class="modal-overlay" id="clientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Resumo do Cliente</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando informações...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
             const avatarButton = document.getElementById('avatarButton');
             const dropdownMenu = document.getElementById('dropdownMenu');
-
+            const viewAllButton = document.getElementById('viewAllButton');
+            const moreClients = document.getElementById('moreClients');
+            const clientModal = document.getElementById('clientModal');
+            const modalClose = document.getElementById('modalClose');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            // Alternar visibilidade do menu de usuário
             if (avatarButton && dropdownMenu) {
-                // Alternar visibilidade do menu
                 avatarButton.addEventListener('click', function (e) {
                     e.stopPropagation();
                     dropdownMenu.classList.toggle('show');
                 });
 
-                // Fechar menu ao clicar fora
                 document.addEventListener('click', function (e) {
                     if (!avatarButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
                         dropdownMenu.classList.remove('show');
                     }
                 });
 
-                // Prevenir que cliques no menu fechem ele
                 dropdownMenu.addEventListener('click', function (e) {
                     e.stopPropagation();
                 });
             }
-        });
-
-        // Dados para o gráfico - CORRIGIDO
-        const salesData = {
-            labels: [`{% for label in chart_data.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}`],
-            values: [`{% for value in chart_data.values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}`]
-        };
-
-        // Debug: Verificar dados no console
-        console.log('Dados do gráfico:', salesData);
-
-        // Inicializar o gráfico
-        document.addEventListener('DOMContentLoaded', function () {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-
-            // Verificar se há dados para exibir
-            if (salesData.values.length > 0 && salesData.values.some(v => v > 0)) {
-                const salesChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: salesData.labels,
-                        datasets: [{
-                            label: 'Vendas (R$)',
-                            data: salesData.values,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function (value) {
-                                        return 'R$ ' + value.toLocaleString('pt-BR');
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            } else {
-                // Mensagem quando não há dados
-                ctx.font = '16px Arial';
-                ctx.fillStyle = '#666';
-                ctx.textAlign = 'center';
-                ctx.fillText('Nenhuma venda nos últimos 7 dias', ctx.canvas.width / 2, ctx.canvas.height / 2);
-            }
 
             // Toggle para mostrar/ocultar clientes
-            const viewAllButton = document.getElementById('viewAllButton');
-            const moreClients = document.getElementById('moreClients');
-
             if (viewAllButton && moreClients) {
                 viewAllButton.addEventListener('click', function () {
                     moreClients.classList.toggle('show');
                     this.classList.toggle('expanded');
 
-                    const icon = this.querySelector('i');
                     if (moreClients.classList.contains('show')) {
                         this.innerHTML = 'Ver menos <i class="fas fa-chevron-up"></i>';
                     } else {
@@ -252,6 +453,218 @@
                     }
                 });
             }
+
+            // Abrir modal ao clicar em um cliente
+            const clientItems = document.querySelectorAll('.client-item[data-cliente]');
+            clientItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const clienteNome = this.getAttribute('data-cliente');
+                    openClientModal(clienteNome);
+                });
+            });
+
+            // Fechar modal
+            if (modalClose) {
+                modalClose.addEventListener('click', function() {
+                    clientModal.classList.remove('active');
+                });
+            }
+
+            // Fechar modal ao clicar fora do conteúdo
+            clientModal.addEventListener('click', function(e) {
+                if (e.target === clientModal) {
+                    clientModal.classList.remove('active');
+                }
+            });
+
+            // Função para abrir o modal e carregar os dados do cliente
+            function openClientModal(clienteNome) {
+                modalTitle.textContent = `Compras de ${clienteNome}`;
+                modalBody.innerHTML = `
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Carregando informações...</p>
+                    </div>
+                `;
+                
+                clientModal.classList.add('active');
+                
+                // Fazer requisição AJAX para obter dados do cliente
+                fetch(`/api/cliente-compras/?cliente=${encodeURIComponent(clienteNome)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderClientData(data, clienteNome);
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do cliente:', error);
+                        modalBody.innerHTML = `
+                            <div class="no-purchases">
+                                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #dc3545;"></i>
+                                <p>Erro ao carregar informações do cliente.</p>
+                            </div>
+                        `;
+                    });
+            }
+
+            // Função para renderizar os dados do cliente no modal
+            function renderClientData(data, clienteNome) {
+                if (data.error) {
+                    modalBody.innerHTML = `
+                        <div class="no-purchases">
+                            <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #dc3545;"></i>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="client-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Gasto:</span>
+                            <span class="summary-value">R$ ${data.total_gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Quantidade de Compras:</span>
+                            <span class="summary-value">${data.quantidade_compras}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Última Compra:</span>
+                            <span class="summary-value">${data.ultima_compra || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+
+                if (data.compras && data.compras.length > 0) {
+                    html += `
+                    <hr>
+                        <div class="purchases-list">
+                            <h4>Últimas Compras</h4>
+                            ${data.compras.map(compra => `
+                                <div class="purchase-item">
+                                    <span class="purchase-date">${compra.data}</span>
+                                    <span class="purchase-amount">R$ ${compra.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="no-purchases">
+                            <i class="fas fa-receipt" style="font-size: 48px; color: #6c757d;"></i>
+                            <p>Nenhuma compra encontrada para este cliente.</p>
+                        </div>
+                    `;
+                }
+
+                modalBody.innerHTML = html;
+            }
+
+            // Dados para o gráfico
+            const salesData = {
+                labels: {{ chart_data.labels|safe }},
+                quantidade: {{ chart_data.quantidade }},
+                lucro: {{ chart_data.lucro }},
+            };
+
+            // Inicializar o gráfico combinado
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            const salesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: salesData.labels,
+                    datasets: [
+                        {
+                            label: 'Quantidade de Vendas',
+                            data: salesData.quantidade,
+                            backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Lucro (R$)',
+                            data: salesData.lucro,
+                            type: 'line',
+                            fill: false,
+                            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgba(40, 167, 69, 1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Vendas'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Lucro (R$)'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR');
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.datasetIndex === 0) {
+                                        label += context.parsed.y + ' vendas';
+                                    } else {
+                                        label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR');
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         });
     </script>
 </body>
