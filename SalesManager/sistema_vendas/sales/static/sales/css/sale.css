@@ -30,41 +30,8 @@ body {
     line-height: 1.6;
 }
 
-/* HEADER UNIFICADO */
-.header {
-    background: white;
-    color: var(--dark-color);
-    padding: 1.2rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--box-shadow);
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    border-bottom: 1px solid var(--gray-light);
-}
 
-.header-title {
-    display: flex;
-    flex-direction: column;
-}
 
-.header-title h1 {
-    margin: 0;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.header-nav {
-    display: flex;
-    gap: 1.5rem;
-    align-items: center;
-}
 
 .nav-link {
     text-decoration: none;

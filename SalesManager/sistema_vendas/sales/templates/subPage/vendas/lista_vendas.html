@@ -7,62 +7,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalesManager - Sistema de Vendas</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="{% static 'sales/css/listSale.css' %}">
-    <style>
-        /* Estilos para o botão de expandir/contrair */
-        .toggle-list-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: var(--primary-color, #4a6cf7);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.3s;
-        }
-        
-        .toggle-list-btn:hover {
-            background-color: var(--primary-dark-color, #3a56d4);
-        }
-        
-        .vendas-container {
-            max-height: 30vh; /* 30% da altura da viewport inicialmente */
-            overflow: hidden;
-            transition: max-height 0.5s ease;
-        }
-        
-        .vendas-container.expanded {
-            max-height: 1000px; /* Altura suficiente para mostrar toda a lista */
-        }
-        
-        .vendas-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'sales/css/listFunc.css' %}">
+ 
 </head>
 
 <body>
-    <!-- HEADER CORRIGIDO-->
-    <div class="header">
-        <div class="header-title">
-            <h1>Sistema de Vendas</h1>
-        </div>
-        <div class="header-nav">
-            <a href="{% url 'sales:cadastrar_venda' %}" class="nav-link">
-                <i class="bi bi-plus-circle"></i> Cadastrar
-            </a>
-            <a href="{% url 'sales:lista_vendas' %}" class="nav-link active">
-                <i class="bi bi-list-check"></i> Vendas
-            </a>
-        </div>
-    </div>
 
     <div id="successNotification" class="notification">
         <div class="notification-header">
@@ -237,27 +192,30 @@
             </div>
         </div>
     </div>
+    <br>
+    <br>
+    <br>
+
+    <!-- Footer IDÊNTICO ao solicitado -->
+    <footer class="footer">
+        <nav class="footer-nav">
+            <a href="{% url 'sales:dashboard' %}" class="footer-button">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'sales:lista_vendas' %}" class="footer-button active">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Vendas</span>
+            </a>
+            <a href="{% url 'sales:cadastrar_venda' %}" class="footer-button">
+                <i class="fas fa-plus-circle"></i>
+                <span>Cadastrar</span>
+            </a>
+        </nav>
+    </footer>
+
+    <script src="{% static 'sales/js/func.js' %}"></script>
     <script src="{% static 'sales/js/details.js' %}"></script>
-    
-    <script>
-        // Script para controlar a exibição da lista
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleBtn = document.getElementById('toggleListBtn');
-            const vendasContainer = document.getElementById('vendasContainer');
-            
-            if (toggleBtn && vendasContainer) {
-                toggleBtn.addEventListener('click', function() {
-                    vendasContainer.classList.toggle('expanded');
-                    
-                    if (vendasContainer.classList.contains('expanded')) {
-                        toggleBtn.innerHTML = '<i class="bi bi-chevron-up"></i> Ocultar lista';
-                    } else {
-                        toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Exibir todos os clientes';
-                    }
-                });
-            }
-        });
-    </script>
 
 </body>
 

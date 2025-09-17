@@ -24,7 +24,7 @@
 
 body {
     font-family: 'Poppins', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ec 100%);
     color: var(--text-color);
     display: flex;
     flex-direction: column;
@@ -667,3 +667,6 @@ body {
         font-size: 0.8rem;
     }
 }
+
+
+

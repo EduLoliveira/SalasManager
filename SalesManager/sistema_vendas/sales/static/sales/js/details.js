@@ -44,6 +44,8 @@ function getCookie(name) {
     return cookieValue;
 }
 
+
+
 // Aguarda o documento carregar completamente
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -101,3 +103,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 });
+

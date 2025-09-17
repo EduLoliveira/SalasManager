@@ -10,11 +10,12 @@ from .models import Venda
 from django.db.models import Sum, Count, Max, Q
 from django.http import HttpResponse
 import csv
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from django.utils import timezone
-from datetime import timedelta
 from decimal import Decimal
+import json
 from django.http import JsonResponse
+
 
 logger = logging.getLogger(__name__)
 
@@ -438,110 +439,192 @@ def exportar_vendas_csv(request):
     
     return response
 
-
 @login_required
 def relatorio_vendas(request):
     usuario = request.user
     hoje = timezone.now().date()
-    
-    # Filtros do relatório
+
+    # Filtros
     periodo = request.GET.get('periodo', '7_dias')
     status_filter = request.GET.get('status', 'todos')
-    
-    # Definir datas com base no período selecionado
-    if periodo == '7_dias':
-        data_inicio = hoje - timedelta(days=7)
-    elif periodo == '30_dias':
-        data_inicio = hoje - timedelta(days=30)
-    elif periodo == 'este_mes':
-        data_inicio = hoje.replace(day=1)
-    elif periodo == 'mes_anterior':
-        primeiro_dia_mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
-        ultimo_dia_mes_anterior = hoje.replace(day=1) - timedelta(days=1)
-        data_inicio = primeiro_dia_mes_anterior
-        data_fim = ultimo_dia_mes_anterior
-    else:
-        data_inicio = hoje - timedelta(days=7)
-    
-    # Consulta base
-    vendas = Venda.objects.filter(usuario=usuario, data_venda__gte=data_inicio)
-    
-    if periodo == 'mes_anterior':
-        vendas = vendas.filter(data_venda__lte=data_fim)
-    else:
-        vendas = vendas.filter(data_venda__lte=hoje)
-    
-    # Aplicar filtro de status
+    data_inicio_filtro = request.GET.get('data_inicio', '')
+    data_fim_filtro = request.GET.get('data_fim', '')
+    status_listagem = request.GET.get('status_listagem', 'todos')
+
+    # Verificar se é uma requisição AJAX
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    # Base de consulta - TODAS as vendas do usuário para listagem
+    vendas_listagem = Venda.objects.filter(usuario=usuario)
+
+    # Base de consulta - Para gráfico e métricas (sem filtros de data específicos)
+    vendas_grafico = Venda.objects.filter(usuario=usuario)
+
+    # Aplicar filtro de status principal para ambas as consultas
     if status_filter == 'concluidas':
-        vendas = vendas.filter(baixada=True)
+        vendas_listagem = vendas_listagem.filter(baixada=True)
+        vendas_grafico = vendas_grafico.filter(baixada=True)
     elif status_filter == 'pendentes':
-        vendas = vendas.filter(baixada=False)
-    
-    # Calcular métricas
-    total_vendas = vendas.count()
-    valor_total = vendas.aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
-    ticket_medio = valor_total / total_vendas if total_vendas > 0 else Decimal('0.00')
-    
-    # Vendas do mês atual para comparação
-    vendas_mes_atual = Venda.objects.filter(
-        usuario=usuario,
-        data_venda__gte=hoje.replace(day=1),
-        data_venda__lte=hoje
-    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
-    
-    # Vendas do mês anterior para crescimento
-    primeiro_dia_mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
-    ultimo_dia_mes_anterior = hoje.replace(day=1) - timedelta(days=1)
-    
-    vendas_mes_anterior = Venda.objects.filter(
-        usuario=usuario,
-        data_venda__gte=primeiro_dia_mes_anterior,
-        data_venda__lte=ultimo_dia_mes_anterior
-    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
-    
-    # Calcular crescimento
-    if vendas_mes_anterior > 0:
-        crescimento = ((vendas_mes_atual - vendas_mes_anterior) / vendas_mes_anterior) * 100
+        vendas_listagem = vendas_listagem.filter(baixada=False)
+        vendas_grafico = vendas_grafico.filter(baixada=False)
+
+    # Aplicar filtros de data específicos apenas para listagem
+    if data_inicio_filtro:
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
+            vendas_listagem = vendas_listagem.filter(data_venda__gte=data_inicio_obj)
+        except ValueError:
+            logger.warning(f"Data início inválida: {data_inicio_filtro}")
+
+    if data_fim_filtro:
+        try:
+            data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
+            vendas_listagem = vendas_listagem.filter(data_venda__lte=data_fim_obj)
+        except ValueError:
+            logger.warning(f"Data fim inválida: {data_fim_filtro}")
+
+    # Aplicar filtro de status da listagem apenas para listagem
+    if status_listagem == 'concluidas':
+        vendas_listagem = vendas_listagem.filter(baixada=True)
+    elif status_listagem == 'pendentes':
+        vendas_listagem = vendas_listagem.filter(baixada=False)
+
+    # Determinar o período para as métricas e gráfico (SEM os filtros específicos)
+    if periodo == '7_dias':
+        # Garantir que começa na segunda-feira da semana atual
+        data_inicio_metrica = hoje - timedelta(days=hoje.weekday())
+    elif periodo == '30_dias':
+        data_inicio_metrica = hoje - timedelta(days=29)
+    elif periodo == 'este_mes':
+        data_inicio_metrica = hoje.replace(day=1)
+    elif periodo == 'ano':
+        data_inicio_metrica = hoje.replace(month=1, day=1)
     else:
-        crescimento = 100 if vendas_mes_atual > 0 else 0
+        # Padrão: semana atual começando na segunda
+        data_inicio_metrica = hoje - timedelta(days=hoje.weekday())
+
+    # Dados para métricas (usando o período selecionado SEM filtros específicos)
+    vendas_periodo_metrica = vendas_grafico.filter(
+        data_venda__gte=data_inicio_metrica, 
+        data_venda__lte=hoje
+    )
     
-    # Vendas recentes (últimas 10)
-    vendas_recentes = vendas.order_by('-data_venda', '-data_criacao')[:10]
+    total_vendas = vendas_periodo_metrica.count()
+    valor_total = vendas_periodo_metrica.aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    dias_ativos = vendas_periodo_metrica.dates('data_venda', 'day').distinct().count()
+
+    # ---- Função para gerar dados de gráfico por intervalo ----
+    def montar_dados(data_inicio, data_fim, periodo_tipo="7_dias"):
+        qs = vendas_grafico.filter(data_venda__gte=data_inicio, data_venda__lte=data_fim)
+        labels, valores = [], []
+
+        if periodo_tipo == "7_dias":
+            # Para 7 dias: apenas dias da semana (Seg a Dom)
+            dias_map = {'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'}
+            
+            datas = [data_inicio + timedelta(days=i) for i in range(7)]
+            for data in datas:
+                dia_semana = dias_map.get(data.strftime('%a'), data.strftime('%a'))
+                total = qs.filter(data_venda=data).aggregate(total=Sum('valor'))['total'] or 0
+                labels.append(dia_semana)  # Apenas o dia da semana
+                valores.append(float(total))
+                
+        elif periodo_tipo in ["30_dias", "este_mes"]:
+            # Para 30 dias e este mês: agrupar por semanas
+            semana_atual = 1
+            data_semana_inicio = data_inicio
+            
+            while data_semana_inicio <= data_fim:
+                data_semana_fim = min(data_semana_inicio + timedelta(days=6), data_fim)
+                
+                total_semana = qs.filter(
+                    data_venda__gte=data_semana_inicio,
+                    data_venda__lte=data_semana_fim
+                ).aggregate(total=Sum('valor'))['total'] or 0
+                
+                labels.append(f"{semana_atual}ª semana")
+                valores.append(float(total_semana))
+                
+                semana_atual += 1
+                data_semana_inicio = data_semana_fim + timedelta(days=1)
+                
+        elif periodo_tipo == "ano":
+            # Para ano: meses
+            for m in range(1, 13):
+                inicio_mes = date(data_inicio.year, m, 1)
+                if inicio_mes > data_fim:
+                    break
+                    
+                fim_mes = (inicio_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                fim_mes = min(fim_mes, data_fim)
+                
+                total_mes = qs.filter(
+                    data_venda__gte=inicio_mes,
+                    data_venda__lte=fim_mes
+                ).aggregate(total=Sum('valor'))['total'] or 0
+                
+                labels.append(inicio_mes.strftime("%b"))
+                valores.append(float(total_mes))
+
+        return {"labels": labels, "valores": valores}
+
+    # ---- Montar todos os períodos de uma vez ----
+    # Para 7 dias: sempre de segunda a domingo da semana atual
+    inicio_7_dias = hoje - timedelta(days=hoje.weekday())
     
-    # Dados para o gráfico (últimos 7 dias)
     dados_grafico = {
-        'labels': [],
-        'valores': []
+        "7_dias": montar_dados(inicio_7_dias, inicio_7_dias + timedelta(days=6), "7_dias"),
+        "30_dias": montar_dados(hoje - timedelta(days=29), hoje, "30_dias"),
+        "este_mes": montar_dados(hoje.replace(day=1), hoje, "este_mes"),
+        "ano": montar_dados(hoje.replace(month=1, day=1), hoje, "ano"),
     }
-    
-    for i in range(6, -1, -1):
-        data = hoje - timedelta(days=i)
-        dia_semana = data.strftime('%a')
-        # Mapeamento para português
-        dias_map = {'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'}
-        dia_semana_pt = dias_map.get(dia_semana, dia_semana)
-        
-        vendas_dia = vendas.filter(data_venda=data).aggregate(
-            total=Sum('valor'),
-            quantidade=Count('id')
-        )
-        
-        dados_grafico['labels'].append(dia_semana_pt)
-        dados_grafico['valores'].append(float(vendas_dia['total'] or Decimal('0.00')))
-    
+
+    # Dados para o período atual
+    dados_atual = dados_grafico.get(periodo, dados_grafico["7_dias"])
+
+    # TODAS AS VENDAS FILTRADAS (sem limite de 10) - usa vendas_listagem que tem todos os filtros
+    vendas_filtradas = vendas_listagem.order_by('-data_venda', '-data_criacao')
+
     context = {
-        'total_vendas': total_vendas,
-        'valor_total': valor_total,
-        'ticket_medio': ticket_medio,
-        'crescimento': crescimento,
-        'vendas_recentes': vendas_recentes,
-        'dados_grafico': dados_grafico,
-        'periodo_selecionado': periodo,
-        'status_selecionado': status_filter,
-        'vendas_mes_atual': vendas_mes_atual,
+        "total_vendas": total_vendas,
+        "valor_total": valor_total,
+        "dias_ativos": dias_ativos,
+        "vendas_recentes": vendas_filtradas,
+        "dados_grafico": dados_atual,
+        "dados_grafico_json": json.dumps(dados_grafico),
+        "periodo_selecionado": periodo,
+        "status_selecionado": status_filter,
+        "data_inicio_filtro": data_inicio_filtro,
+        "data_fim_filtro": data_fim_filtro,
+        "status_listagem_selecionado": status_listagem,
     }
+
+    # Se for requisição AJAX, retornar JSON
+    if is_ajax:
+        # Preparar dados para resposta AJAX
+        vendas_data = []
+        for venda in vendas_filtradas:
+            vendas_data.append({
+                'cliente': venda.cliente,
+                'data_venda': venda.data_venda.strftime('%d/%m/%Y') if venda.data_venda else '',
+                'quantidade': venda.quantidade,
+                'valor': float(venda.valor),
+                'baixada': venda.baixada,
+                'id': venda.id
+            })
+
+        return JsonResponse({
+            'success': True,
+            'total_vendas': total_vendas,
+            'valor_total': float(valor_total),
+            'dias_ativos': dias_ativos,
+            'dados_grafico': dados_atual,
+            'vendas_recentes': vendas_data,
+            'vendas_count': vendas_filtradas.count()
+        })
     
-    return render(request, 'subPage/Home/relatorio_vendas.html', context)
+    return render(request, "subPage/Home/relatorio_vendas.html", context)
+
 
 @login_required
 def cliente_compras_api(request):
