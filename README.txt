@@ -4,7 +4,6 @@ Sistema web para **gestão de vendas** e **relatórios**, com autenticação de 
 A aplicação possibilita cadastro de vendas, listagem com filtros e visualização de métricas no dashboard.
 
 ---
-
 ## ▶️ Como Rodar o Projeto
 ### 1. Clonar o repositório
 ```
