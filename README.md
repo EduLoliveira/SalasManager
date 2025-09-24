@@ -30,9 +30,9 @@ python.exe -m pip install --upgrade pip
 Copiar o arquivo de exemplo para `.env`:
 ```
 cd sistema_vendas
-copy .env.example .env      # Windows
+copy env.example .env      # Windows
 # ou
-cp .env.example .env        # Linux/Mac
+cp env.example .env        # Linux/Mac
 ```
 Edite o `.env` conforme sua configuração (banco de dados, secret key etc.).
 
