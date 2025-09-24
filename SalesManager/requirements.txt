@@ -16,3 +16,4 @@ sqlparse==0.5.3
 validate-docbr==1.10.0
 weasyprint==66.0
 whitenoise==6.9.0
+dj-database-url==2.0.0
