@@ -120,3 +120,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_COOKIE_AGE = 2409600
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Configurações CSRF para produção
+CSRF_TRUSTED_ORIGINS = [
+    'https://salasManager.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+CSRF_COOKIE_SECURE = not DEBUG  # True em produção
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = False
+
+# Configurações de sessão
+SESSION_COOKIE_SECURE = not DEBUG  # True em produção
+SESSION_COOKIE_HTTPONLY = True
