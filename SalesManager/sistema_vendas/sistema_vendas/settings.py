@@ -23,10 +23,9 @@ INSTALLED_APPS = [
     'sales', 
 ]
 
-# ← ADICIONE WHITENOISE NO MIDDLEWARE (IMPORTANTE!)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← ADICIONADO
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -55,7 +54,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sistema_vendas.wsgi.application'
 
-# ← DATABASE CONFIG PARA RENDER (SQLite em dev, PostgreSQL em produção)
+# ← DATABASE CONFIG COM FALLBACK (CORRIGIDO)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -63,12 +62,15 @@ DATABASES = {
     }
 }
 
-# ← CONFIGURAÇÃO PARA BANCO POSTGRESQL NO RENDER
-if not DEBUG:
+# ← CONFIGURAÇÃO SEGURA PARA DATABASE_URL
+# Use um valor padrão para evitar erro se DATABASE_URL não existir
+database_url = config('DATABASE_URL', default='sqlite:///db.sqlite3')
+
+if database_url and database_url != 'sqlite:///db.sqlite3':
     DATABASES['default'] = dj_database_url.config(
-        default=config('DATABASE_URL'),
+        default=database_url,
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=not DEBUG
     )
 
 # Custom user model
@@ -105,18 +107,16 @@ TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
-# ← CONFIGURAÇÃO CORRIGIDA DE ARQUIVOS ESTÁTICOS
-STATIC_URL = '/static/'  # ← ADICIONE A BARRA (/)
+# Configuração de arquivos estáticos
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# ← CONFIGURAÇÃO WHITENOISE (IMPORTANTE!)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SESSION_COOKIE_AGE = 2409600  # Mês em segundos (para "Lembrar-me")
+SESSION_COOKIE_AGE = 2409600
 SESSION_SAVE_EVERY_REQUEST = True
