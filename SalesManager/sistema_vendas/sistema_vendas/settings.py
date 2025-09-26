@@ -101,6 +101,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+EMAIL_BACKEND = [
+    'django.core.mail.backends.console.EmailBackend',
+]
+
 # Internationalization
 LANGUAGE_CODE = 'pt-br' 
 TIME_ZONE = 'America/Sao_Paulo'  

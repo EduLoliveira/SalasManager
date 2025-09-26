@@ -21,6 +21,9 @@ urlpatterns = [
     path('cadastrar-venda/', views.cadastrar_venda, name='cadastrar_venda'),
     path('listagem-venda/', views.lista_vendas, name='lista_vendas'),
     path('baixar-venda/<int:venda_id>/', views.baixar_venda, name='baixar_venda'),
-    path('exportar-vendas/', views.exportar_vendas_csv, name='exportar_vendas'),
     path('api/cliente-compras/', views.cliente_compras_api, name='cliente_compras_api'),
+
+    # Exportação de relatórios
+    path('relatorio/exportar-csv/', views.exportar_relatorio_csv, name='exportar_relatorio_csv'),
+    path('relatorio/enviar-email/', views.enviar_relatorio_email, name='enviar_relatorio_email'),
 ]

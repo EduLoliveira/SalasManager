@@ -295,7 +295,6 @@ def lista_vendas(request):
     if busca:
         vendas = vendas.filter(
             Q(cliente__icontains=busca)
-            # REMOVIDO: Q(descricao__icontains=busca) - campo não existe
         )
     
     # Filtro de status (ativas/baixadas/todas)
@@ -379,6 +378,7 @@ def baixar_venda(request, venda_id):
 
 @login_required
 def exportar_vendas_csv(request):
+    """Exportar lista de vendas como CSV (para a página de lista de vendas)"""
     # Obter os mesmos filtros da lista
     busca = request.GET.get('busca', '')
     status = request.GET.get('status', 'ativas')
@@ -392,7 +392,6 @@ def exportar_vendas_csv(request):
     if busca:
         vendas = vendas.filter(
             Q(cliente__icontains=busca)
-            # REMOVIDO: Q(descricao__icontains=busca) - campo não existe
         )
     
     if status == 'baixadas':
@@ -424,7 +423,6 @@ def exportar_vendas_csv(request):
     response['Content-Disposition'] = 'attachment; filename="vendas_exportadas.csv"'
     
     writer = csv.writer(response, delimiter=';')
-    # REMOVIDO: 'Descrição' da lista de colunas (campo não existe)
     writer.writerow(['Data Venda', 'Cliente', 'Quantidade', 'Valor', 'Status', 'Data Baixa'])
     
     for venda in vendas:
@@ -493,8 +491,8 @@ def relatorio_vendas(request):
     if periodo == '7_dias':
         # Garantir que começa na segunda-feira da semana atual
         data_inicio_metrica = hoje - timedelta(days=hoje.weekday())
-    elif periodo == '30_dias':
-        data_inicio_metrica = hoje - timedelta(days=29)
+    elif periodo == '45_dias':  # ALTERADO: de 30_dias para 45_dias
+        data_inicio_metrica = hoje - timedelta(days=44)  # ALTERADO: de 29 para 44
     elif periodo == 'este_mes':
         data_inicio_metrica = hoje.replace(day=1)
     elif periodo == 'ano':
@@ -529,8 +527,8 @@ def relatorio_vendas(request):
                 labels.append(dia_semana)  # Apenas o dia da semana
                 valores.append(float(total))
                 
-        elif periodo_tipo in ["30_dias", "este_mes"]:
-            # Para 30 dias e este mês: agrupar por semanas
+        elif periodo_tipo in ["45_dias", "este_mes"]:  # ALTERADO: de 30_dias para 45_dias
+            # Para 45 dias e este mês: agrupar por semanas
             semana_atual = 1
             data_semana_inicio = data_inicio
             
@@ -574,7 +572,7 @@ def relatorio_vendas(request):
     
     dados_grafico = {
         "7_dias": montar_dados(inicio_7_dias, inicio_7_dias + timedelta(days=6), "7_dias"),
-        "30_dias": montar_dados(hoje - timedelta(days=29), hoje, "30_dias"),
+        "45_dias": montar_dados(hoje - timedelta(days=44), hoje, "45_dias"),  # ALTERADO: de 30_dias para 45_dias
         "este_mes": montar_dados(hoje.replace(day=1), hoje, "este_mes"),
         "ano": montar_dados(hoje.replace(month=1, day=1), hoje, "ano"),
     }
@@ -668,3 +666,201 @@ def cliente_compras_api(request):
         'ultima_compra': ultima_compra,
         'compras': compras
     })
+
+@login_required
+def exportar_relatorio_csv(request):
+    """Exportar relatório de vendas como CSV"""
+    try:
+        # Obter os mesmos parâmetros de filtro do relatório
+        periodo = request.GET.get('periodo', '7_dias')
+        status_filter = request.GET.get('status', 'todos')
+        data_inicio_filtro = request.GET.get('data_inicio', '')
+        data_fim_filtro = request.GET.get('data_fim', '')
+        status_listagem = request.GET.get('status_listagem', 'todos')
+        
+        # Aplicar os mesmos filtros da view relatorio_vendas
+        vendas = Venda.objects.filter(usuario=request.user)
+        
+        if status_filter == 'concluidas':
+            vendas = vendas.filter(baixada=True)
+        elif status_filter == 'pendentes':
+            vendas = vendas.filter(baixada=False)
+            
+        if status_listagem == 'concluidas':
+            vendas = vendas.filter(baixada=True)
+        elif status_listagem == 'pendentes':
+            vendas = vendas.filter(baixada=False)
+            
+        if data_inicio_filtro:
+            try:
+                data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
+                vendas = vendas.filter(data_venda__gte=data_inicio_obj)
+            except ValueError:
+                pass
+                
+        if data_fim_filtro:
+            try:
+                data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
+                vendas = vendas.filter(data_venda__lte=data_fim_obj)
+            except ValueError:
+                pass
+        
+        # Ordenar por data mais recente
+        vendas = vendas.order_by('-data_venda')
+        
+        # Criar resposta HTTP com arquivo CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="relatorio_vendas_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+        
+        writer = csv.writer(response, delimiter=';')
+        writer.writerow(['Relatório de Vendas - SalesManager'])
+        writer.writerow(['Data de exportação', timezone.now().strftime('%d/%m/%Y %H:%M:%S')])
+        writer.writerow(['Período', periodo])
+        writer.writerow(['Status', status_filter])
+        writer.writerow(['Data início', data_inicio_filtro or 'Não informado'])
+        writer.writerow(['Data fim', data_fim_filtro or 'Não informado'])
+        writer.writerow([])  # Linha em branco
+        writer.writerow(['Data Venda', 'Cliente', 'Quantidade', 'Valor', 'Status', 'Data Baixa'])
+        
+        for venda in vendas:
+            writer.writerow([
+                venda.data_venda.strftime('%d/%m/%Y') if venda.data_venda else '',
+                venda.cliente,
+                venda.quantidade,
+                str(venda.valor).replace('.', ','),
+                'Baixada' if venda.baixada else 'Ativa',
+                venda.data_baixa.strftime('%d/%m/%Y') if venda.data_baixa else ''
+            ])
+        
+        # Adicionar totais
+        total_vendas = vendas.count()
+        valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
+        
+        writer.writerow([])
+        writer.writerow(['TOTAL DE VENDAS', total_vendas])
+        writer.writerow(['VALOR TOTAL', str(valor_total).replace('.', ',')])
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Erro ao exportar CSV: {str(e)}")
+        messages.error(request, 'Erro ao exportar relatório CSV')
+        return redirect('sales:relatorio_vendas')
+
+@login_required
+def enviar_relatorio_email(request):
+    """Enviar relatório de vendas por e-mail - Versão Simplificada"""
+    if request.method == 'POST':
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            email_destino = request.POST.get('email')
+            
+            if not email_destino:
+                return JsonResponse({'success': False, 'error': 'E-mail não informado'})
+            
+            # Validar formato do email
+            import re
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
+                return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
+            
+            # Obter parâmetros
+            periodo = request.POST.get('periodo', '7_dias')
+            status_filter = request.POST.get('status', 'todos')
+            data_inicio_filtro = request.POST.get('data_inicio', '')
+            data_fim_filtro = request.POST.get('data_fim', '')
+            
+            # Buscar dados
+            vendas = Venda.objects.filter(usuario=request.user)
+            
+            if status_filter == 'concluidas':
+                vendas = vendas.filter(baixada=True)
+            elif status_filter == 'pendentes':
+                vendas = vendas.filter(baixada=False)
+                
+            if data_inicio_filtro:
+                try:
+                    data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
+                    vendas = vendas.filter(data_venda__gte=data_inicio_obj)
+                except ValueError:
+                    pass
+                    
+            if data_fim_filtro:
+                try:
+                    data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
+                    vendas = vendas.filter(data_venda__lte=data_fim_obj)
+                except ValueError:
+                    pass
+            
+            total_vendas = vendas.count()
+            valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
+            
+            # Mapear nomes
+            periodo_nome = {
+                '7_dias': 'Últimos 7 dias',
+                '45_dias': 'Últimos 45 dias', 
+                'este_mes': 'Este mês',
+                'ano': 'Ano'
+            }.get(periodo, periodo)
+            
+            status_nome = {
+                'todos': 'Todos',
+                'concluidas': 'Concluídas',
+                'pendentes': 'Pendentes'
+            }.get(status_filter, status_filter)
+            
+            # Criar mensagem
+            assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
+            
+            mensagem = f"""
+RELATÓRIO DE VENDAS - SALESMANAGER
+
+Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
+Período: {periodo_nome}
+Status: {status_nome}
+Data início: {data_inicio_filtro or 'Não informado'}
+Data fim: {data_fim_filtro or 'Não informado'}
+
+RESUMO:
+• Total de vendas: {total_vendas}
+• Valor total: R$ {valor_total:.2f}
+
+Para visualizar o relatório completo com gráficos e todos os dados,
+acesse o sistema SalesManager.
+
+--
+Este é um e-mail automático. Não responda.
+SalesManager System
+            """
+            
+            # Tentar enviar e-mail
+            try:
+                send_mail(
+                    assunto,
+                    mensagem,
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salesmanager.com'),
+                    [email_destino],
+                    fail_silently=False,
+                )
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Relatório enviado com sucesso para {email_destino}'
+                })
+                
+            except Exception as e:
+                logger.error(f"Erro SMTP: {str(e)}")
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Servidor de e-mail não disponível. O relatório foi salvo no sistema.'
+                })
+            
+        except Exception as e:
+            logger.error(f"Erro ao enviar e-mail: {str(e)}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Erro interno: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método não permitido'})
