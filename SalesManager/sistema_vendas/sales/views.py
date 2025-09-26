@@ -748,14 +748,30 @@ def exportar_relatorio_csv(request):
         return redirect('sales:relatorio_vendas')
 
 @login_required
+@require_http_methods(["POST"])
+@csrf_protect
 def enviar_relatorio_email(request):
-    """Enviar relatório de vendas por e-mail - Versão Simplificada"""
+    """Enviar relatório de vendas por e-mail - Versão Melhorada"""
     if request.method == 'POST':
         try:
-            from django.core.mail import send_mail
+            from django.core.mail import EmailMessage
             from django.conf import settings
+            import json
             
-            email_destino = request.POST.get('email')
+            # Verificar se é AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                data = json.loads(request.body)
+                email_destino = data.get('email')
+                periodo = data.get('periodo', '7_dias')
+                status_filter = data.get('status', 'todos')
+                data_inicio_filtro = data.get('data_inicio', '')
+                data_fim_filtro = data.get('data_fim', '')
+            else:
+                email_destino = request.POST.get('email')
+                periodo = request.POST.get('periodo', '7_dias')
+                status_filter = request.POST.get('status', 'todos')
+                data_inicio_filtro = request.POST.get('data_inicio', '')
+                data_fim_filtro = request.POST.get('data_fim', '')
             
             if not email_destino:
                 return JsonResponse({'success': False, 'error': 'E-mail não informado'})
@@ -765,13 +781,7 @@ def enviar_relatorio_email(request):
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
                 return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
             
-            # Obter parâmetros
-            periodo = request.POST.get('periodo', '7_dias')
-            status_filter = request.POST.get('status', 'todos')
-            data_inicio_filtro = request.POST.get('data_inicio', '')
-            data_fim_filtro = request.POST.get('data_fim', '')
-            
-            # Buscar dados
+            # Buscar dados (mesma lógica do relatório)
             vendas = Venda.objects.filter(usuario=request.user)
             
             if status_filter == 'concluidas':
@@ -796,27 +806,27 @@ def enviar_relatorio_email(request):
             total_vendas = vendas.count()
             valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
             
-            # Mapear nomes
+            # Criar conteúdo do e-mail
             periodo_nome = {
                 '7_dias': 'Últimos 7 dias',
                 '45_dias': 'Últimos 45 dias', 
                 'este_mes': 'Este mês',
-                'ano': 'Ano'
+                'ano': 'Ano atual'
             }.get(periodo, periodo)
             
             status_nome = {
-                'todos': 'Todos',
+                'todos': 'Todas',
                 'concluidas': 'Concluídas',
                 'pendentes': 'Pendentes'
             }.get(status_filter, status_filter)
             
-            # Criar mensagem
             assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
             
             mensagem = f"""
 RELATÓRIO DE VENDAS - SALESMANAGER
 
 Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
+Usuário: {request.user.username}
 Período: {periodo_nome}
 Status: {status_nome}
 Data início: {data_inicio_filtro or 'Não informado'}
@@ -826,35 +836,62 @@ RESUMO:
 • Total de vendas: {total_vendas}
 • Valor total: R$ {valor_total:.2f}
 
-Para visualizar o relatório completo com gráficos e todos os dados,
-acesse o sistema SalesManager.
-
+DETALHES DAS VENDAS:
+"""
+            # Adicionar últimas 10 vendas
+            for i, venda in enumerate(vendas.order_by('-data_venda')[:10], 1):
+                status = "Baixada" if venda.baixada else "Ativa"
+                mensagem += f"{i}. {venda.data_venda.strftime('%d/%m/%Y')} - {venda.cliente} - R$ {venda.valor:.2f} - {status}\n"
+            
+            mensagem += f"""
 --
-Este é um e-mail automático. Não responda.
-SalesManager System
-            """
+Este é um e-mail automático gerado pelo SalesManager.
+Total de vendas no período: {vendas.count()}
+"""
             
             # Tentar enviar e-mail
             try:
-                send_mail(
+                # Usar EmailMessage para mais controle
+                email = EmailMessage(
                     assunto,
                     mensagem,
-                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salesmanager.com'),
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salasmanager.com'),
                     [email_destino],
-                    fail_silently=False,
+                    reply_to=['noreply@salasmanager.com'],
                 )
                 
-                return JsonResponse({
-                    'success': True, 
-                    'message': f'Relatório enviado com sucesso para {email_destino}'
-                })
+                enviado = email.send(fail_silently=False)
+                
+                if enviado:
+                    logger.info(f"E-mail enviado para {email_destino}")
+                    return JsonResponse({
+                        'success': True, 
+                        'message': f'Relatório enviado com sucesso para {email_destino}'
+                    })
+                else:
+                    logger.error("Falha no envio do e-mail")
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Falha no envio do e-mail'
+                    })
                 
             except Exception as e:
                 logger.error(f"Erro SMTP: {str(e)}")
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'Servidor de e-mail não disponível. O relatório foi salvo no sistema.'
-                })
+                # Em desenvolvimento, fallback para console
+                if DEBUG:
+                    print("="*50)
+                    print("CONTEÚDO DO E-MAIL (Console Fallback):")
+                    print(mensagem)
+                    print("="*50)
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Em desenvolvimento - E-mail simulado para {email_destino}'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Servidor de e-mail não disponível. Configure as credenciais SMTP.'
+                    })
             
         except Exception as e:
             logger.error(f"Erro ao enviar e-mail: {str(e)}")

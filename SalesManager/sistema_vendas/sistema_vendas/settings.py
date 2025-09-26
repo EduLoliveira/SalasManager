@@ -100,10 +100,23 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend',
 
-EMAIL_BACKEND = [
-    'django.core.mail.backends.console.EmailBackend',
-]
+# Configurações de E-mail
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+# Garantir que temos um DEFAULT_FROM_EMAIL
+if not hasattr(settings, 'DEFAULT_FROM_EMAIL') or not settings.DEFAULT_FROM_EMAIL:
+    DEFAULT_FROM_EMAIL = 'eduLoliveira.projetos@hotmail.com' 
 
 # Internationalization
 LANGUAGE_CODE = 'pt-br' 

@@ -482,20 +482,35 @@
             
             showLoading('Enviando e-mail...');
             
-            const params = new URLSearchParams(window.location.search);
-            params.append('email', email);
+            // CORREÇÃO: Coletar todos os parâmetros de filtro atuais
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // CORREÇÃO: Criar objeto com todos os dados necessários
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('periodo', urlParams.get('periodo') || '7_dias');
+            formData.append('status', urlParams.get('status') || 'todos');
+            formData.append('data_inicio', urlParams.get('data_inicio') || '');
+            formData.append('data_fim', urlParams.get('data_fim') || '');
+            formData.append('status_listagem', urlParams.get('status_listagem') || 'todos');
+            
+            // CORREÇÃO: Adicionar CSRF token corretamente
+            const csrfToken = getCSRFToken();
             
             fetch(`{% url 'sales:enviar_relatorio_email' %}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': getCSRFToken(),
+                    'X-CSRFToken': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: params.toString()
+                body: formData
             })
             .then(response => {
                 if (!response.ok) {
+                    // Se for erro 403 (CSRF), mostrar mensagem específica
+                    if (response.status === 403) {
+                        throw new Error('Erro de segurança (CSRF). Por favor, recarregue a página e tente novamente.');
+                    }
                     throw new Error('Erro na resposta do servidor: ' + response.status);
                 }
                 return response.json();
@@ -508,8 +523,8 @@
                 }
             })
             .catch(error => {
-                console.error('Erro de rede:', error);
-                alert('❌ Erro de conexão. Verifique sua internet e tente novamente.');
+                console.error('Erro ao enviar e-mail:', error);
+                alert('❌ ' + error.message);
             })
             .finally(() => {
                 hideLoading();
@@ -517,7 +532,7 @@
         }
     }
 
-    // Função auxiliar para obter o token CSRF
+    // Função auxiliar para obter o token CSRF (CORREÇÃO)
     function getCSRFToken() {
         const name = 'csrftoken';
         let cookieValue = null;
