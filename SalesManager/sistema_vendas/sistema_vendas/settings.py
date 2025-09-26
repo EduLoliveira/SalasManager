@@ -113,9 +113,6 @@ else:
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
     DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
-if 'DEFAULT_FROM_EMAIL' not in globals() or not DEFAULT_FROM_EMAIL:
-    DEFAULT_FROM_EMAIL = 'eduLoliveira.projetos@hotmail.com'
-
 # Internationalization
 LANGUAGE_CODE = 'pt-br' 
 TIME_ZONE = 'America/Sao_Paulo'  
