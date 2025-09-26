@@ -101,7 +101,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-
 # Configurações de E-mail
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -114,9 +113,8 @@ else:
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
     DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
-# Garantir que temos um DEFAULT_FROM_EMAIL
-if not hasattr(settings, 'DEFAULT_FROM_EMAIL') or not settings.DEFAULT_FROM_EMAIL:
-    DEFAULT_FROM_EMAIL = 'eduLoliveira.projetos@hotmail.com' 
+if 'DEFAULT_FROM_EMAIL' not in globals() or not DEFAULT_FROM_EMAIL:
+    DEFAULT_FROM_EMAIL = 'eduLoliveira.projetos@hotmail.com'
 
 # Internationalization
 LANGUAGE_CODE = 'pt-br' 
