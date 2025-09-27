@@ -5,7 +5,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>SalesManager - Relatório de Vendas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -227,6 +226,10 @@
                 <button class="footer-option" onclick="exportarCSV()">
                     <i class="fas fa-file-excel"></i>
                     <span>Exportar como CSV</span>
+                </button>
+                <button class="footer-option" onclick="enviarPorEmail()">
+                    <i class="fas fa-envelope"></i>
+                    <span>Enviar por E-mail</span>
                 </button>
             </div>
         </div>
@@ -468,73 +471,54 @@
 
 
     function enviarPorEmail() {
-    const email = prompt('Digite o e-mail para enviar o relatório:');
-    if (email) {
-        // Validar e-mail básico
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('❌ Por favor, digite um e-mail válido (exemplo: nome@provedor.com).');
-            return;
-        }
-        
-        showLoading('Enviando e-mail...');
-        
-        // CORREÇÃO DEFINITIVA: Usar FormData e garantir CSRF token
-        const formData = new FormData();
-        formData.append('email', email);
-        
-        // Adicionar todos os parâmetros da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        for (const [key, value] of urlParams.entries()) {
-            formData.append(key, value);
-        }
-        
-        // Obter CSRF token corretamente
-        const csrfToken = getCSRFToken();
-        
-        if (!csrfToken) {
-            alert('❌ Erro de segurança. Por favor, recarregue a página.');
-            hideLoading();
-            return;
-        }
-        
-        fetch(`{% url 'sales:enviar_relatorio_email' %}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (response.status === 403) {
-                throw new Error('Erro de segurança (CSRF). Recarregue a página.');
+        const email = prompt('Digite o e-mail para enviar o relatório:');
+        if (email) {
+            // Validar e-mail básico
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('❌ Por favor, digite um e-mail válido (exemplo: nome@provedor.com).');
+                return;
             }
-            if (!response.ok) {
-                throw new Error('Erro no servidor: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + (data.message || 'Relatório enviado com sucesso!'));
-            } else {
-                alert('❌ ' + (data.error || 'Erro ao enviar e-mail.'));
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao enviar e-mail:', error);
-            alert('❌ ' + error.message);
-        })
-        .finally(() => {
-            hideLoading();
-        });
+            
+            showLoading('Enviando e-mail...');
+            
+            const params = new URLSearchParams(window.location.search);
+            params.append('email', email);
+            
+            fetch(`{% url 'sales:enviar_relatorio_email' %}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: params.toString()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + (data.message || 'Relatório enviado com sucesso!'));
+                } else {
+                    alert('❌ ' + (data.error || 'Erro desconhecido ao enviar e-mail.'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro de rede:', error);
+                alert('❌ Erro de conexão. Verifique sua internet e tente novamente.');
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
     }
-}
 
-    // Função auxiliar melhorada para obter o token CSRF
+    // Função auxiliar para obter o token CSRF
     function getCSRFToken() {
-        // Tentar pegar do cookie
         const name = 'csrftoken';
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -547,23 +531,6 @@
                 }
             }
         }
-        
-        // Se não encontrou no cookie, tentar no meta tag
-        if (!cookieValue) {
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            if (csrfMeta) {
-                cookieValue = csrfMeta.getAttribute('content');
-            }
-        }
-        
-        // Se ainda não encontrou, tentar no input hidden
-        if (!cookieValue) {
-            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfInput) {
-                cookieValue = csrfInput.value;
-            }
-        }
-        
         return cookieValue;
     }
 

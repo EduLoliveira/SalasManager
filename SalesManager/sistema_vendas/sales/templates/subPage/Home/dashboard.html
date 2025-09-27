@@ -10,10 +10,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'sales/css/style.css' %}">
     <link rel="stylesheet" href="{% static 'sales/css/alternates.css' %}">
+    <link rel="stylesheet" href="{% static 'sales/css/loadingOverlay.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Carregando dados do mês...</p>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="header">
         <div class="logo">
@@ -53,6 +62,54 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Filtro por Mês -->
+        <div class="filter-container">
+            <div class="filter-title">Filtros do Dashboard</div>
+            <div class="month-filter">
+                <button class="filter-button" id="monthFilterButton">
+                    <i class="fas fa-filter"></i>
+                    Filtrar por Mês
+                    <span class="filter-indicator" id="filterIndicator">
+                        {% if request.GET.mes %}
+                            {% with mes=request.GET.mes %}
+                                {% if mes == "all" %}Todos{% else %}
+                                    {% if mes == "1" %}Janeiro{% endif %}
+                                    {% if mes == "2" %}Fevereiro{% endif %}
+                                    {% if mes == "3" %}Março{% endif %}
+                                    {% if mes == "4" %}Abril{% endif %}
+                                    {% if mes == "5" %}Maio{% endif %}
+                                    {% if mes == "6" %}Junho{% endif %}
+                                    {% if mes == "7" %}Julho{% endif %}
+                                    {% if mes == "8" %}Agosto{% endif %}
+                                    {% if mes == "9" %}Setembro{% endif %}
+                                    {% if mes == "10" %}Outubro{% endif %}
+                                    {% if mes == "11" %}Novembro{% endif %}
+                                    {% if mes == "12" %}Dezembro{% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            Todos
+                        {% endif %}
+                    </span>
+                </button>
+                <div class="month-dropdown" id="monthDropdown">
+                    <div class="month-option {% if not request.GET.mes or request.GET.mes == 'all' %}active{% endif %}" data-month="all">Todos os meses</div>
+                    <div class="month-option {% if request.GET.mes == '1' %}active{% endif %}" data-month="1">Janeiro</div>
+                    <div class="month-option {% if request.GET.mes == '2' %}active{% endif %}" data-month="2">Fevereiro</div>
+                    <div class="month-option {% if request.GET.mes == '3' %}active{% endif %}" data-month="3">Março</div>
+                    <div class="month-option {% if request.GET.mes == '4' %}active{% endif %}" data-month="4">Abril</div>
+                    <div class="month-option {% if request.GET.mes == '5' %}active{% endif %}" data-month="5">Maio</div>
+                    <div class="month-option {% if request.GET.mes == '6' %}active{% endif %}" data-month="6">Junho</div>
+                    <div class="month-option {% if request.GET.mes == '7' %}active{% endif %}" data-month="7">Julho</div>
+                    <div class="month-option {% if request.GET.mes == '8' %}active{% endif %}" data-month="8">Agosto</div>
+                    <div class="month-option {% if request.GET.mes == '9' %}active{% endif %}" data-month="9">Setembro</div>
+                    <div class="month-option {% if request.GET.mes == '10' %}active{% endif %}" data-month="10">Outubro</div>
+                    <div class="month-option {% if request.GET.mes == '11' %}active{% endif %}" data-month="11">Novembro</div>
+                    <div class="month-option {% if request.GET.mes == '12' %}active{% endif %}" data-month="12">Dezembro</div>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard-grid">
             <div class="stat-box today-sales" style="background-color: var(--primary-color);">
                 <div class="stat-icon" style="top: 8%;">
@@ -65,7 +122,26 @@
                 <div class="stat-icon" style="top: 8%;">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
-                <h3>Total Mês</h3><br>
+                <h3>Total 
+                    {% if request.GET.mes and request.GET.mes != 'all' %}
+                        {% with mes=request.GET.mes %}
+                            {% if mes == "1" %}Janeiro{% endif %}
+                            {% if mes == "2" %}Fevereiro{% endif %}
+                            {% if mes == "3" %}Março{% endif %}
+                            {% if mes == "4" %}Abril{% endif %}
+                            {% if mes == "5" %}Maio{% endif %}
+                            {% if mes == "6" %}Junho{% endif %}
+                            {% if mes == "7" %}Julho{% endif %}
+                            {% if mes == "8" %}Agosto{% endif %}
+                            {% if mes == "9" %}Setembro{% endif %}
+                            {% if mes == "10" %}Outubro{% endif %}
+                            {% if mes == "11" %}Novembro{% endif %}
+                            {% if mes == "12" %}Dezembro{% endif %}
+                        {% endwith %}
+                    {% else %}
+                        Mês
+                    {% endif %}
+                </h3>
                 <div class="stat-value">R$ {{ vendas_mes.total|default:0|floatformat:2|intcomma }}</div>
             </div>
         </div>
@@ -184,6 +260,13 @@
             const modalClose = document.getElementById('modalClose');
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            // Elementos do filtro de mês
+            const monthFilterButton = document.getElementById('monthFilterButton');
+            const monthDropdown = document.getElementById('monthDropdown');
+            const filterIndicator = document.getElementById('filterIndicator');
+            const monthOptions = document.querySelectorAll('.month-option');
             
             // Alternar visibilidade do menu de usuário
             if (avatarButton && dropdownMenu) {
@@ -201,6 +284,56 @@
                 dropdownMenu.addEventListener('click', function (e) {
                     e.stopPropagation();
                 });
+            }
+
+            // Controle do filtro de mês
+            if (monthFilterButton && monthDropdown) {
+                monthFilterButton.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    monthDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!monthFilterButton.contains(e.target) && !monthDropdown.contains(e.target)) {
+                        monthDropdown.classList.remove('show');
+                    }
+                });
+
+                // Selecionar um mês
+                monthOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const month = this.getAttribute('data-month');
+                        const monthName = this.textContent;
+                        
+                        // Mostrar loading
+                        loadingOverlay.style.display = 'flex';
+                        
+                        // Aplicar filtro
+                        applyMonthFilter(month, monthName);
+                    });
+                });
+
+                // Fechar dropdown ao clicar fora
+                monthDropdown.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+
+            // Função para aplicar o filtro por mês
+            function applyMonthFilter(month, monthName) {
+                console.log('Filtrando por mês:', month);
+                
+                // Construir URL com parâmetro de mês
+                const url = new URL(window.location.href);
+                
+                if (month === 'all') {
+                    url.searchParams.delete('mes');
+                } else {
+                    url.searchParams.set('mes', month);
+                }
+                
+                // Redirecionar para a URL com o filtro
+                window.location.href = url.toString();
             }
 
             // Toggle para mostrar/ocultar clientes

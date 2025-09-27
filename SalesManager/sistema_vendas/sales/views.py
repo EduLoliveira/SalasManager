@@ -151,6 +151,9 @@ def dashboard_view(request):
     hoje = timezone.now().date()
     usuario = request.user
     
+    # Obter parâmetro de filtro por mês
+    mes_filtro = request.GET.get('mes')
+    
     # Otimização: Executar todas as consultas em paralelo
     from concurrent.futures import ThreadPoolExecutor
     
@@ -161,18 +164,53 @@ def dashboard_view(request):
         ).aggregate(total=Sum('valor'))
     
     def get_vendas_mes():
-        primeiro_dia_mes = hoje.replace(day=1)
+        if mes_filtro and mes_filtro != 'all':
+            try:
+                mes = int(mes_filtro)
+                ano = hoje.year
+                primeiro_dia_mes = date(ano, mes, 1)
+                if mes == 12:
+                    ultimo_dia_mes = date(ano, mes, 31)
+                else:
+                    ultimo_dia_mes = date(ano, mes + 1, 1) - timedelta(days=1)
+            except (ValueError, TypeError):
+                # Se houver erro no parâmetro, usar mês atual
+                primeiro_dia_mes = hoje.replace(day=1)
+                ultimo_dia_mes = hoje
+        else:
+            # Sem filtro ou "todos os meses" - usar mês atual
+            primeiro_dia_mes = hoje.replace(day=1)
+            ultimo_dia_mes = hoje
+        
         return Venda.objects.filter(
             data_venda__gte=primeiro_dia_mes,
-            data_venda__lte=hoje,
+            data_venda__lte=ultimo_dia_mes,
             usuario=usuario
         ).aggregate(total=Sum('valor'))
     
     def get_top_clientes():
-        trinta_dias_atras = hoje - timedelta(days=30)
+        # Ajustar período para o mês filtrado ou últimos 30 dias
+        if mes_filtro and mes_filtro != 'all':
+            try:
+                mes = int(mes_filtro)
+                ano = hoje.year
+                primeiro_dia_mes = date(ano, mes, 1)
+                if mes == 12:
+                    ultimo_dia_mes = date(ano, mes, 31)
+                else:
+                    ultimo_dia_mes = date(ano, mes + 1, 1) - timedelta(days=1)
+            except (ValueError, TypeError):
+                trinta_dias_atras = hoje - timedelta(days=30)
+                primeiro_dia_mes = trinta_dias_atras
+                ultimo_dia_mes = hoje
+        else:
+            trinta_dias_atras = hoje - timedelta(days=30)
+            primeiro_dia_mes = trinta_dias_atras
+            ultimo_dia_mes = hoje
+            
         return list(Venda.objects.filter(
-            data_venda__gte=trinta_dias_atras,
-            data_venda__lte=hoje,
+            data_venda__gte=primeiro_dia_mes,
+            data_venda__lte=ultimo_dia_mes,
             usuario=usuario
         ).values('cliente').annotate(
             total=Sum('valor'),
@@ -184,37 +222,87 @@ def dashboard_view(request):
         dados = {
             'labels': [], 
             'quantidade': [],
-            'lucro': []
+            'lucro': [],
+            'tipo': 'semana'  # Padrão: semana
         }
         
-        # Mapeamento de dias da semana em português
-        dias_semana_pt = {
-            'Mon': 'Seg',
-            'Tue': 'Ter',
-            'Wed': 'Qua',
-            'Thu': 'Qui',
-            'Fri': 'Sex',
-            'Sat': 'Sáb',
-            'Sun': 'Dom'
-        }
+        if mes_filtro and mes_filtro != 'all':
+            # Gráfico por MÊS - Agrupar por semanas do mês
+            try:
+                mes = int(mes_filtro)
+                ano = hoje.year
+                primeiro_dia_mes = date(ano, mes, 1)
+                if mes == 12:
+                    ultimo_dia_mes = date(ano, mes, 31)
+                else:
+                    ultimo_dia_mes = date(ano, mes + 1, 1) - timedelta(days=1)
+                
+                # Agrupar por semanas do mês
+                data_atual = primeiro_dia_mes
+                semana_numero = 1
+                
+                while data_atual <= ultimo_dia_mes:
+                    # Calcular o fim da semana (domingo)
+                    fim_semana = data_atual + timedelta(days=(6 - data_atual.weekday()))
+                    fim_semana = min(fim_semana, ultimo_dia_mes)
+                    
+                    # Buscar vendas para esta semana
+                    vendas_semana = Venda.objects.filter(
+                        data_venda__gte=data_atual,
+                        data_venda__lte=fim_semana,
+                        usuario=usuario
+                    ).aggregate(
+                        total=Sum('valor'),
+                        quantidade=Count('id')
+                    )
+                    
+                    # Adicionar label como "1ª Semana", "2ª Semana", etc.
+                    dados['labels'].append(f"{semana_numero}ª Semana")
+                    dados['quantidade'].append(vendas_semana['quantidade'] or 0)
+                    dados['lucro'].append(float(vendas_semana['total'] or Decimal('0.00')))
+                    
+                    # Ir para a próxima semana
+                    data_atual = fim_semana + timedelta(days=1)
+                    semana_numero += 1
+                
+                dados['tipo'] = 'mes'
+                
+            except (ValueError, TypeError) as e:
+                # Em caso de erro, voltar para semana
+                logger.error(f"Erro ao processar filtro de mês: {str(e)}")
+                pass
         
-        for i in range(6, -1, -1):
-            data = hoje - timedelta(days=i)
-            dia_semana_en = data.strftime('%a')  # Retorna Mon, Tue, Wed, etc.
-            dia_semana_pt = dias_semana_pt.get(dia_semana_en, dia_semana_en)
+        if not dados['labels']:  # Se não preencheu (filtro "Todos" ou erro)
+            # Gráfico por SEMANA - Últimos 7 dias
+            dados['tipo'] = 'semana'
+            # Mapeamento de dias da semana em português
+            dias_semana_pt = {
+                'Mon': 'Seg',
+                'Tue': 'Ter',
+                'Wed': 'Qua',
+                'Thu': 'Qui',
+                'Fri': 'Sex',
+                'Sat': 'Sáb',
+                'Sun': 'Dom'
+            }
             
-            # Buscar quantidade de vendas e valor total para o dia
-            vendas_dia = Venda.objects.filter(
-                data_venda=data,
-                usuario=usuario
-            ).aggregate(
-                total=Sum('valor'),
-                quantidade=Count('id')
-            )
-            
-            dados['labels'].append(dia_semana_pt)
-            dados['quantidade'].append(vendas_dia['quantidade'] or 0)
-            dados['lucro'].append(float(vendas_dia['total'] or Decimal('0.00')))
+            for i in range(6, -1, -1):
+                data = hoje - timedelta(days=i)
+                dia_semana_en = data.strftime('%a')  # Retorna Mon, Tue, Wed, etc.
+                dia_semana_pt = dias_semana_pt.get(dia_semana_en, dia_semana_en)
+                
+                # Buscar quantidade de vendas e valor total para o dia
+                vendas_dia = Venda.objects.filter(
+                    data_venda=data,
+                    usuario=usuario
+                ).aggregate(
+                    total=Sum('valor'),
+                    quantidade=Count('id')
+                )
+                
+                dados['labels'].append(dia_semana_pt)
+                dados['quantidade'].append(vendas_dia['quantidade'] or 0)
+                dados['lucro'].append(float(vendas_dia['total'] or Decimal('0.00')))
         
         return dados
     
@@ -234,7 +322,8 @@ def dashboard_view(request):
     chart_data_json = {
         'labels': chart_data['labels'],
         'quantidade': chart_data['quantidade'],
-        'lucro': chart_data['lucro']
+        'lucro': chart_data['lucro'],
+        'tipo': chart_data['tipo']
     }
     
     context = {
@@ -242,7 +331,8 @@ def dashboard_view(request):
         'vendas_hoje': vendas_hoje,
         'vendas_mes': vendas_mes,
         'top_clientes': top_clientes,
-        'chart_data': chart_data_json
+        'chart_data': chart_data_json,
+        'mes_filtro': mes_filtro
     }
     
     return render(request, 'subPage/Home/dashboard.html', context)
@@ -747,74 +837,76 @@ def exportar_relatorio_csv(request):
         messages.error(request, 'Erro ao exportar relatório CSV')
         return redirect('sales:relatorio_vendas')
 
-
 @login_required
-@require_http_methods(["POST"])
-@csrf_protect
 def enviar_relatorio_email(request):
-    """Enviar relatório de vendas por e-mail - Versão Simplificada e Corrigida"""
-    try:
-        # CORREÇÃO: Ler dados apenas do POST (nunca do body)
-        email_destino = request.POST.get('email')
-        periodo = request.POST.get('periodo', '7_dias')
-        status_filter = request.POST.get('status', 'todos')
-        data_inicio_filtro = request.POST.get('data_inicio', '')
-        data_fim_filtro = request.POST.get('data_fim', '')
-        
-        if not email_destino:
-            return JsonResponse({'success': False, 'error': 'E-mail não informado'})
-        
-        # Validar formato do email
-        import re
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
-            return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
-        
-        # Buscar dados com os filtros
-        vendas = Venda.objects.filter(usuario=request.user)
-        
-        if status_filter == 'concluidas':
-            vendas = vendas.filter(baixada=True)
-        elif status_filter == 'pendentes':
-            vendas = vendas.filter(baixada=False)
+    """Enviar relatório de vendas por e-mail - Versão Simplificada"""
+    if request.method == 'POST':
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
             
-        if data_inicio_filtro:
-            try:
-                data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
-                vendas = vendas.filter(data_venda__gte=data_inicio_obj)
-            except ValueError:
-                pass
+            email_destino = request.POST.get('email')
+            
+            if not email_destino:
+                return JsonResponse({'success': False, 'error': 'E-mail não informado'})
+            
+            # Validar formato do email
+            import re
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
+                return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
+            
+            # Obter parâmetros
+            periodo = request.POST.get('periodo', '7_dias')
+            status_filter = request.POST.get('status', 'todos')
+            data_inicio_filtro = request.POST.get('data_inicio', '')
+            data_fim_filtro = request.POST.get('data_fim', '')
+            
+            # Buscar dados
+            vendas = Venda.objects.filter(usuario=request.user)
+            
+            if status_filter == 'concluidas':
+                vendas = vendas.filter(baixada=True)
+            elif status_filter == 'pendentes':
+                vendas = vendas.filter(baixada=False)
                 
-        if data_fim_filtro:
-            try:
-                data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
-                vendas = vendas.filter(data_venda__lte=data_fim_obj)
-            except ValueError:
-                pass
-        
-        total_vendas = vendas.count()
-        valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
-        
-        # Criar mensagem do relatório
-        periodo_nome = {
-            '7_dias': 'Últimos 7 dias',
-            '45_dias': 'Últimos 45 dias', 
-            'este_mes': 'Este mês',
-            'ano': 'Ano atual'
-        }.get(periodo, periodo)
-        
-        status_nome = {
-            'todos': 'Todas',
-            'concluidas': 'Concluídas',
-            'pendentes': 'Pendentes'
-        }.get(status_filter, status_filter)
-        
-        assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
-        
-        mensagem = f"""
+            if data_inicio_filtro:
+                try:
+                    data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
+                    vendas = vendas.filter(data_venda__gte=data_inicio_obj)
+                except ValueError:
+                    pass
+                    
+            if data_fim_filtro:
+                try:
+                    data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
+                    vendas = vendas.filter(data_venda__lte=data_fim_obj)
+                except ValueError:
+                    pass
+            
+            total_vendas = vendas.count()
+            valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
+            
+            # Mapear nomes
+            periodo_nome = {
+                '7_dias': 'Últimos 7 dias',
+                '45_dias': 'Últimos 45 dias', 
+                'este_mes': 'Este mês',
+                'ano': 'Ano'
+            }.get(periodo, periodo)
+            
+            status_nome = {
+                'todos': 'Todos',
+                'concluidas': 'Concluídas',
+                'pendentes': 'Pendentes'
+            }.get(status_filter, status_filter)
+            
+            # Criar mensagem
+            assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
+            
+            mensagem = f"""
 RELATÓRIO DE VENDAS - SALESMANAGER
 
 Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
-Usuário: {request.user.username}
 Período: {periodo_nome}
 Status: {status_nome}
 Data início: {data_inicio_filtro or 'Não informado'}
@@ -824,60 +916,41 @@ RESUMO:
 • Total de vendas: {total_vendas}
 • Valor total: R$ {valor_total:.2f}
 
-DETALHES DAS ÚLTIMAS VENDAS:
-"""
-        # Adicionar últimas 10 vendas
-        for i, venda in enumerate(vendas.order_by('-data_venda')[:10], 1):
-            status = "Baixada" if venda.baixada else "Ativa"
-            mensagem += f"{i}. {venda.data_venda.strftime('%d/%m/%Y')} - {venda.cliente} - R$ {venda.valor:.2f} - {status}\n"
-        
-        mensagem += f"""
+Para visualizar o relatório completo com gráficos e todos os dados,
+acesse o sistema SalesManager.
+
 --
-Este é um e-mail automático gerado pelo SalesManager.
-"""
-        
-        # Tentar enviar e-mail
-        try:
-            from django.core.mail import send_mail
-            from django.conf import settings
+Este é um e-mail automático. Não responda.
+SalesManager System
+            """
             
-            send_mail(
-                assunto,
-                mensagem,
-                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salasmanager.com'),
-                [email_destino],
-                fail_silently=False,
-            )
-            
-            logger.info(f"E-mail enviado para {email_destino}")
-            return JsonResponse({
-                'success': True, 
-                'message': f'Relatório enviado com sucesso para {email_destino}'
-            })
-            
-        except Exception as e:
-            logger.error(f"Erro SMTP: {str(e)}")
-            # Fallback para desenvolvimento
-            if settings.DEBUG:
-                print("="*50)
-                print("E-MAIL SIMULADO (Desenvolvimento):")
-                print(f"Para: {email_destino}")
-                print(f"Assunto: {assunto}")
-                print(mensagem)
-                print("="*50)
+            # Tentar enviar e-mail
+            try:
+                send_mail(
+                    assunto,
+                    mensagem,
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salesmanager.com'),
+                    [email_destino],
+                    fail_silently=False,
+                )
+                
                 return JsonResponse({
-                    'success': True,
-                    'message': f'E-mail simulado para {email_destino} (modo desenvolvimento)'
+                    'success': True, 
+                    'message': f'Relatório enviado com sucesso para {email_destino}'
                 })
-            else:
+                
+            except Exception as e:
+                logger.error(f"Erro SMTP: {str(e)}")
                 return JsonResponse({
                     'success': False, 
-                    'error': 'Erro ao enviar e-mail. Serviço temporariamente indisponível.'
+                    'error': 'Servidor de e-mail não disponível. O relatório foi salvo no sistema.'
                 })
-        
-    except Exception as e:
-        logger.error(f"Erro ao processar requisição: {str(e)}")
-        return JsonResponse({
-            'success': False, 
-            'error': f'Erro interno: {str(e)}'
-        })
+            
+        except Exception as e:
+            logger.error(f"Erro ao enviar e-mail: {str(e)}")
+            return JsonResponse({
+                'success': False, 
+                'error': f'Erro interno: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método não permitido'})
