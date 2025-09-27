@@ -148,15 +148,3 @@ CSRF_USE_SESSIONS = False
 # Configurações de sessão
 SESSION_COOKIE_SECURE = not DEBUG  # True em produção
 SESSION_COOKIE_HTTPONLY = True
-
-from datetime import datetime
-
-# Backup automático do SQLite (solução temporária)
-if not DEBUG and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
-    db_path = DATABASES['default']['NAME']
-    backup_path = f"{db_path}.backup.{datetime.now().strftime('%Y%m%d')}"
-    
-    # Tenta restaurar backup se existir
-    if os.path.exists(backup_path):
-        import shutil
-        shutil.copy2(backup_path, db_path)
