@@ -1,0 +1,13 @@
+Camada para Identificação e Alinhamento:
+
+Sales Manager/
+├── sistema_vendas/          # Projeto Django principal
+│   ├── db.sqlite3 (# Banco de dados SQLite "Testes Unitarios" ) - (# Banco de dados PostgreSQL "Produção")
+│   ├── manage.py           # Script de gerenciamento Django
+│   └── sistema_vendas/     # Configurações do projeto
+├── .env                    # Variáveis de ambiente
+├── venv/                   # Ambiente virtual Python
+├── requirements.txt        # Dependências do projeto
+README.md            
+.gitattributes 
+
