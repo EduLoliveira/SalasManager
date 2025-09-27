@@ -381,30 +381,23 @@ def lista_vendas(request):
     # Iniciar com todas as vendas do usuário
     vendas = Venda.objects.filter(usuario=request.user)
     
-    # Aplicar filtros baseados nos parâmetros da URL
+    # Aplicar filtros
     if busca:
-        vendas = vendas.filter(
-            Q(cliente__icontains=busca)
-        )
+        vendas = vendas.filter(Q(cliente__icontains=busca))
     
-    # Filtro de status (ativas/baixadas/todas)
     if status == 'baixadas':
         vendas = vendas.filter(baixada=True)
     elif status == 'ativas':
         vendas = vendas.filter(baixada=False)
-    # Se status for 'todas' ou qualquer outro valor, mostra todas
     
-    # Filtro por cliente específico
     if cliente:
         vendas = vendas.filter(cliente__icontains=cliente)
     
-    # Filtro por período
     if data_inicio:
         try:
             data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__gte=data_inicio_obj)
         except ValueError:
-            logger.warning(f"Data início inválida: {data_inicio}")
             pass
     
     if data_fim:
@@ -412,28 +405,24 @@ def lista_vendas(request):
             data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
             vendas = vendas.filter(data_venda__lte=data_fim_obj)
         except ValueError:
-            logger.warning(f"Data fim inválida: {data_fim}")
             pass
     
-    # Ordenação
-    if ordenar_por not in ['data_venda', '-data_venda', 'cliente', '-cliente', 'valor', '-valor']:
-        ordenar_por = '-data_venda'
+    # ORDENAÇÃO CORRIGIDA E SIMPLIFICADA
+    ordenacao_map = {
+        'data_venda': ['data_venda', '-id'],           # Mais antigas primeiro
+        '-data_venda': ['-data_venda', '-id'],         # Mais recentes primeiro (PADRÃO)
+        'cliente': ['cliente', '-data_venda'],         # Cliente A-Z, depois mais recentes
+        '-cliente': ['-cliente', '-data_venda'],       # Cliente Z-A, depois mais recentes
+        'valor': ['valor', '-data_venda'],             # Menor valor, depois mais recentes
+        '-valor': ['-valor', '-data_venda'],           # Maior valor, depois mais recentes
+    }
     
-    vendas = vendas.order_by(ordenar_por)
+    campos_ordenacao = ordenacao_map.get(ordenar_por, ['-data_venda', '-id'])
+    vendas = vendas.order_by(*campos_ordenacao)
     
     # Calcular totais
     total_vendas = vendas.count()
     total_valor = vendas.aggregate(Sum('valor'))['valor__sum'] or 0
-    
-    # Agrupar vendas por cliente para o resumo lateral
-    vendas_por_cliente = Venda.objects.filter(usuario=request.user).values('cliente').annotate(
-        total=Sum('valor'),
-        quantidade=Count('id'),
-        ultima_data=Max('data_venda')
-    ).order_by('-total')[:10]
-    
-    # Obter lista única de clientes para o filtro
-    clientes = Venda.objects.filter(usuario=request.user).values_list('cliente', flat=True).distinct()
     
     context = {
         'vendas': vendas,
@@ -445,9 +434,8 @@ def lista_vendas(request):
         'data_inicio': data_inicio,
         'data_fim': data_fim,
         'ordenar_por': ordenar_por,
-        'vendas_por_cliente': vendas_por_cliente,
-        'clientes_lista': sorted(set(clientes)),
     }
+    
     return render(request, 'subPage/vendas/lista_vendas.html', context)
 
 @login_required
