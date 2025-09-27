@@ -747,319 +747,137 @@ def exportar_relatorio_csv(request):
         messages.error(request, 'Erro ao exportar relatório CSV')
         return redirect('sales:relatorio_vendas')
 
+
 @login_required
 @require_http_methods(["POST"])
 @csrf_protect
 def enviar_relatorio_email(request):
-    """Enviar relatório de vendas por e-mail - Versão Corrigida"""
-    if request.method == 'POST':
+    """Enviar relatório de vendas por e-mail - Versão Simplificada e Corrigida"""
+    try:
+        # CORREÇÃO: Ler dados apenas do POST (nunca do body)
+        email_destino = request.POST.get('email')
+        periodo = request.POST.get('periodo', '7_dias')
+        status_filter = request.POST.get('status', 'todos')
+        data_inicio_filtro = request.POST.get('data_inicio', '')
+        data_fim_filtro = request.POST.get('data_fim', '')
+        
+        if not email_destino:
+            return JsonResponse({'success': False, 'error': 'E-mail não informado'})
+        
+        # Validar formato do email
+        import re
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
+            return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
+        
+        # Buscar dados com os filtros
+        vendas = Venda.objects.filter(usuario=request.user)
+        
+        if status_filter == 'concluidas':
+            vendas = vendas.filter(baixada=True)
+        elif status_filter == 'pendentes':
+            vendas = vendas.filter(baixada=False)
+            
+        if data_inicio_filtro:
+            try:
+                data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
+                vendas = vendas.filter(data_venda__gte=data_inicio_obj)
+            except ValueError:
+                pass
+                
+        if data_fim_filtro:
+            try:
+                data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
+                vendas = vendas.filter(data_venda__lte=data_fim_obj)
+            except ValueError:
+                pass
+        
+        total_vendas = vendas.count()
+        valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
+        
+        # Criar mensagem do relatório
+        periodo_nome = {
+            '7_dias': 'Últimos 7 dias',
+            '45_dias': 'Últimos 45 dias', 
+            'este_mes': 'Este mês',
+            'ano': 'Ano atual'
+        }.get(periodo, periodo)
+        
+        status_nome = {
+            'todos': 'Todas',
+            'concluidas': 'Concluídas',
+            'pendentes': 'Pendentes'
+        }.get(status_filter, status_filter)
+        
+        assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
+        
+        mensagem = f"""
+RELATÓRIO DE VENDAS - SALESMANAGER
+
+Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
+Usuário: {request.user.username}
+Período: {periodo_nome}
+Status: {status_nome}
+Data início: {data_inicio_filtro or 'Não informado'}
+Data fim: {data_fim_filtro or 'Não informado'}
+
+RESUMO:
+• Total de vendas: {total_vendas}
+• Valor total: R$ {valor_total:.2f}
+
+DETALHES DAS ÚLTIMAS VENDAS:
+"""
+        # Adicionar últimas 10 vendas
+        for i, venda in enumerate(vendas.order_by('-data_venda')[:10], 1):
+            status = "Baixada" if venda.baixada else "Ativa"
+            mensagem += f"{i}. {venda.data_venda.strftime('%d/%m/%Y')} - {venda.cliente} - R$ {venda.valor:.2f} - {status}\n"
+        
+        mensagem += f"""
+--
+Este é um e-mail automático gerado pelo SalesManager.
+"""
+        
+        # Tentar enviar e-mail
         try:
             from django.core.mail import send_mail
             from django.conf import settings
-            import json
             
-            # CORREÇÃO: Ler os dados de forma correta
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                # Para requisições AJAX com JSON
-                try:
-                    data = json.loads(request.body)
-                    email_destino = data.get('email')
-                    periodo = data.get('periodo', '7_dias')
-                    status_filter = data.get('status', 'todos')
-                    data_inicio_filtro = data.get('data_inicio', '')
-                    data_fim_filtro = data.get('data_fim', '')
-                except json.JSONDecodeError:
-                    # Se não for JSON, usar POST data
-                    email_destino = request.POST.get('email')
-                    periodo = request.POST.get('periodo', '7_dias')
-                    status_filter = request.POST.get('status', 'todos')
-                    data_inicio_filtro = request.POST.get('data_inicio', '')
-                    data_fim_filtro = request.POST.get('data_fim', '')
-            else:
-                # Para formulários normais
-                email_destino = request.POST.get('email')
-                periodo = request.POST.get('periodo', '7_dias')
-                status_filter = request.POST.get('status', 'todos')
-                data_inicio_filtro = request.POST.get('data_inicio', '')
-                data_fim_filtro = request.POST.get('data_fim', '')
+            send_mail(
+                assunto,
+                mensagem,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salasmanager.com'),
+                [email_destino],
+                fail_silently=False,
+            )
             
-            if not email_destino:
-                return JsonResponse({'success': False, 'error': 'E-mail não informado'})
-            
-            # Validar formato do email
-            import re
-            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
-                return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
-            
-            # Buscar dados com os filtros
-            vendas = Venda.objects.filter(usuario=request.user)
-            
-            if status_filter == 'concluidas':
-                vendas = vendas.filter(baixada=True)
-            elif status_filter == 'pendentes':
-                vendas = vendas.filter(baixada=False)
-                
-            if data_inicio_filtro:
-                try:
-                    data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
-                    vendas = vendas.filter(data_venda__gte=data_inicio_obj)
-                except ValueError:
-                    pass
-                    
-            if data_fim_filtro:
-                try:
-                    data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
-                    vendas = vendas.filter(data_venda__lte=data_fim_obj)
-                except ValueError:
-                    pass
-            
-            total_vendas = vendas.count()
-            valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
-            
-            # Criar mensagem do relatório
-            periodo_nome = {
-                '7_dias': 'Últimos 7 dias',
-                '45_dias': 'Últimos 45 dias', 
-                'este_mes': 'Este mês',
-                'ano': 'Ano atual'
-            }.get(periodo, periodo)
-            
-            status_nome = {
-                'todos': 'Todas',
-                'concluidas': 'Concluídas',
-                'pendentes': 'Pendentes'
-            }.get(status_filter, status_filter)
-            
-            assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
-            
-            mensagem = f"""
-RELATÓRIO DE VENDAS - SALESMANAGER
-
-Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
-Usuário: {request.user.username}
-Período: {periodo_nome}
-Status: {status_nome}
-Data início: {data_inicio_filtro or 'Não informado'}
-Data fim: {data_fim_filtro or 'Não informado'}
-
-RESUMO:
-• Total de vendas: {total_vendas}
-• Valor total: R$ {valor_total:.2f}
-
-DETALHES DAS VENDAS:
-"""
-            # Adicionar últimas 10 vendas
-            for i, venda in enumerate(vendas.order_by('-data_venda')[:10], 1):
-                status = "Baixada" if venda.baixada else "Ativa"
-                mensagem += f"{i}. {venda.data_venda.strftime('%d/%m/%Y')} - {venda.cliente} - R$ {venda.valor:.2f} - {status}\n"
-            
-            mensagem += f"""
---
-Este é um e-mail automático gerado pelo SalesManager.
-Total de vendas no período: {vendas.count()}
-"""
-            
-            # Tentar enviar e-mail
-            try:
-                # Usar EmailMessage para mais controle
-                from django.core.mail import EmailMessage
-                
-                email = EmailMessage(
-                    assunto,
-                    mensagem,
-                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salasmanager.com'),
-                    [email_destino],
-                    reply_to=['noreply@salasmanager.com'],
-                )
-                
-                enviado = email.send(fail_silently=False)
-                
-                if enviado:
-                    logger.info(f"E-mail enviado para {email_destino}")
-                    return JsonResponse({
-                        'success': True, 
-                        'message': f'Relatório enviado com sucesso para {email_destino}'
-                    })
-                else:
-                    logger.error("Falha no envio do e-mail")
-                    return JsonResponse({
-                        'success': False, 
-                        'error': 'Falha no envio do e-mail'
-                    })
-                
-            except Exception as e:
-                logger.error(f"Erro SMTP: {str(e)}")
-                # Em desenvolvimento, fallback para console
-                if DEBUG:
-                    print("="*50)
-                    print("CONTEÚDO DO E-MAIL (Console Fallback):")
-                    print(mensagem)
-                    print("="*50)
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Em desenvolvimento - E-mail simulado para {email_destimo}'
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False, 
-                        'error': 'Servidor de e-mail não disponível. Configure as credenciais SMTP.'
-                    })
+            logger.info(f"E-mail enviado para {email_destino}")
+            return JsonResponse({
+                'success': True, 
+                'message': f'Relatório enviado com sucesso para {email_destino}'
+            })
             
         except Exception as e:
-            logger.error(f"Erro ao enviar e-mail: {str(e)}")
-            return JsonResponse({
-                'success': False, 
-                'error': f'Erro interno: {str(e)}'
-            })
-    
-    return JsonResponse({'success': False, 'error': 'Método não permitido'})
-    """Enviar relatório de vendas por e-mail - Versão Melhorada"""
-    if request.method == 'POST':
-        try:
-            from django.core.mail import EmailMessage
-            from django.conf import settings
-            import json
-            
-            # Verificar se é AJAX
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                data = json.loads(request.body)
-                email_destino = data.get('email')
-                periodo = data.get('periodo', '7_dias')
-                status_filter = data.get('status', 'todos')
-                data_inicio_filtro = data.get('data_inicio', '')
-                data_fim_filtro = data.get('data_fim', '')
+            logger.error(f"Erro SMTP: {str(e)}")
+            # Fallback para desenvolvimento
+            if settings.DEBUG:
+                print("="*50)
+                print("E-MAIL SIMULADO (Desenvolvimento):")
+                print(f"Para: {email_destino}")
+                print(f"Assunto: {assunto}")
+                print(mensagem)
+                print("="*50)
+                return JsonResponse({
+                    'success': True,
+                    'message': f'E-mail simulado para {email_destino} (modo desenvolvimento)'
+                })
             else:
-                email_destino = request.POST.get('email')
-                periodo = request.POST.get('periodo', '7_dias')
-                status_filter = request.POST.get('status', 'todos')
-                data_inicio_filtro = request.POST.get('data_inicio', '')
-                data_fim_filtro = request.POST.get('data_fim', '')
-            
-            if not email_destino:
-                return JsonResponse({'success': False, 'error': 'E-mail não informado'})
-            
-            # Validar formato do email
-            import re
-            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email_destino):
-                return JsonResponse({'success': False, 'error': 'Formato de e-mail inválido'})
-            
-            # Buscar dados (mesma lógica do relatório)
-            vendas = Venda.objects.filter(usuario=request.user)
-            
-            if status_filter == 'concluidas':
-                vendas = vendas.filter(baixada=True)
-            elif status_filter == 'pendentes':
-                vendas = vendas.filter(baixada=False)
-                
-            if data_inicio_filtro:
-                try:
-                    data_inicio_obj = datetime.strptime(data_inicio_filtro, '%Y-%m-%d').date()
-                    vendas = vendas.filter(data_venda__gte=data_inicio_obj)
-                except ValueError:
-                    pass
-                    
-            if data_fim_filtro:
-                try:
-                    data_fim_obj = datetime.strptime(data_fim_filtro, '%Y-%m-%d').date()
-                    vendas = vendas.filter(data_venda__lte=data_fim_obj)
-                except ValueError:
-                    pass
-            
-            total_vendas = vendas.count()
-            valor_total = vendas.aggregate(total=Sum('valor'))['total'] or 0
-            
-            # Criar conteúdo do e-mail
-            periodo_nome = {
-                '7_dias': 'Últimos 7 dias',
-                '45_dias': 'Últimos 45 dias', 
-                'este_mes': 'Este mês',
-                'ano': 'Ano atual'
-            }.get(periodo, periodo)
-            
-            status_nome = {
-                'todos': 'Todas',
-                'concluidas': 'Concluídas',
-                'pendentes': 'Pendentes'
-            }.get(status_filter, status_filter)
-            
-            assunto = f"Relatório de Vendas - {timezone.now().strftime('%d/%m/%Y')}"
-            
-            mensagem = f"""
-RELATÓRIO DE VENDAS - SALESMANAGER
-
-Data do relatório: {timezone.now().strftime('%d/%m/%Y %H:%M')}
-Usuário: {request.user.username}
-Período: {periodo_nome}
-Status: {status_nome}
-Data início: {data_inicio_filtro or 'Não informado'}
-Data fim: {data_fim_filtro or 'Não informado'}
-
-RESUMO:
-• Total de vendas: {total_vendas}
-• Valor total: R$ {valor_total:.2f}
-
-DETALHES DAS VENDAS:
-"""
-            # Adicionar últimas 10 vendas
-            for i, venda in enumerate(vendas.order_by('-data_venda')[:10], 1):
-                status = "Baixada" if venda.baixada else "Ativa"
-                mensagem += f"{i}. {venda.data_venda.strftime('%d/%m/%Y')} - {venda.cliente} - R$ {venda.valor:.2f} - {status}\n"
-            
-            mensagem += f"""
---
-Este é um e-mail automático gerado pelo SalesManager.
-Total de vendas no período: {vendas.count()}
-"""
-            
-            # Tentar enviar e-mail
-            try:
-                # Usar EmailMessage para mais controle
-                email = EmailMessage(
-                    assunto,
-                    mensagem,
-                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@salasmanager.com'),
-                    [email_destino],
-                    reply_to=['noreply@salasmanager.com'],
-                )
-                
-                enviado = email.send(fail_silently=False)
-                
-                if enviado:
-                    logger.info(f"E-mail enviado para {email_destino}")
-                    return JsonResponse({
-                        'success': True, 
-                        'message': f'Relatório enviado com sucesso para {email_destino}'
-                    })
-                else:
-                    logger.error("Falha no envio do e-mail")
-                    return JsonResponse({
-                        'success': False, 
-                        'error': 'Falha no envio do e-mail'
-                    })
-                
-            except Exception as e:
-                logger.error(f"Erro SMTP: {str(e)}")
-                # Em desenvolvimento, fallback para console
-                if DEBUG:
-                    print("="*50)
-                    print("CONTEÚDO DO E-MAIL (Console Fallback):")
-                    print(mensagem)
-                    print("="*50)
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Em desenvolvimento - E-mail simulado para {email_destino}'
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False, 
-                        'error': 'Servidor de e-mail não disponível. Configure as credenciais SMTP.'
-                    })
-            
-        except Exception as e:
-            logger.error(f"Erro ao enviar e-mail: {str(e)}")
-            return JsonResponse({
-                'success': False, 
-                'error': f'Erro interno: {str(e)}'
-            })
-    
-    return JsonResponse({'success': False, 'error': 'Método não permitido'})
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Erro ao enviar e-mail. Serviço temporariamente indisponível.'
+                })
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar requisição: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': f'Erro interno: {str(e)}'
+        })
