@@ -1,0 +1,999 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Usuários - SalesManager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: #1e293b;
+            --card-bg: #ffffff;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Elegante */
+        .sidebar {
+            background: var(--sidebar-bg);
+            min-height: 100vh;
+            position: fixed;
+            width: 280px;
+            z-index: 1000;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-brand {
+            padding: 2rem 1.5rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-brand h4 {
+            color: white;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .sidebar-brand .subtitle {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .sidebar .nav-link {
+            color: #cbd5e1;
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem 1rem;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .main-content {
+            margin-left: 280px;
+            transition: var(--transition);
+            min-height: 100vh;
+        }
+
+        /* Header Moderno */
+        .main-header {
+            background: var(--card-bg);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .page-title {
+            color: var(--dark);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        /* Cards Elegantes */
+        .admin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .admin-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .card-header h6 {
+            color: var(--dark);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Botões Refinados */
+        .btn {
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-outline-primary {
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* Tabela Elegante */
+        .table {
+            margin: 0;
+        }
+
+        .table th {
+            background: #f8fafc;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table td {
+            padding: 1.25rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-hover tbody tr {
+            transition: var(--transition);
+        }
+
+        .table-hover tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Avatar de Usuário */
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            font-size: 1.125rem;
+        }
+
+        /* Badges Modernas */
+        .badge {
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .badge-superuser {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+        }
+
+        .badge-staff {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .badge-user {
+            background: #e2e8f0;
+            color: var(--text-secondary);
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .status-active {
+            background: var(--success);
+        }
+
+        .status-inactive {
+            background: var(--danger);
+        }
+
+        /* Filtros e Formulários */
+        .form-control, .form-select {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .input-group-text {
+            background: #f8fafc;
+            border: 1.5px solid var(--border);
+            border-right: none;
+        }
+
+        /* Notificações */
+        .notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .notification-item {
+            padding: 0.875rem 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 0.5rem;
+            background: white;
+            border-left: 3px solid var(--info);
+            transition: var(--transition);
+        }
+
+        .notification-item:hover {
+            background: #f8fafc;
+        }
+
+        .notification-item.unread {
+            background: #f0f9ff;
+            border-left-color: var(--primary);
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            background: white;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stats-card i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Modal Elegante */
+        .modal-content {
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            border: none;
+        }
+
+        /* Paginação */
+        .pagination .page-link {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            margin: 0 0.25rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Alertas */
+        .alert {
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 1100;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 300px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-toggle {
+                display: flex;
+            }
+            
+            .main-header {
+                padding: 1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Animações Suaves */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Scrollbar Personalizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Elegante -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="sidebar-brand">
+                    <h4>
+                        <i class="fas fa-crown me-2"></i>
+                        Admin Panel
+                    </h4>
+                    <div class="subtitle">SalesManager</div>
+                </div>
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item mt-2">
+                            <a class="nav-link d-flex align-items-center" href="{% url 'sales:dashboard' %}">
+                                <i class="fas fa-arrow-left me-3"></i>
+                                Voltar ao Sistema
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active d-flex align-items-center" href="#">
+                                <i class="fas fa-users me-3"></i>
+                                Gerenciar Usuários
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#statsModal">
+                                <i class="fas fa-chart-bar me-3"></i>
+                                Estatísticas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#">
+                                <i class="fas fa-cog me-3"></i>
+                                Configurações
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#">
+                                <i class="fas fa-history me-3"></i>
+                                Logs do Sistema
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Header -->
+                <div class="main-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <h1 class="page-title">
+                                <i class="fas fa-users-cog text-primary me-2"></i>
+                                Gerenciar Usuários
+                            </h1>
+                            <p class="page-subtitle">Gerencie contas, permissões e acessos dos usuários do sistema</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary text-white px-3 py-2 rounded-pill">
+                                <i class="fas fa-users me-2"></i>
+                                {{ total_usuarios }} usuário{{ total_usuarios|pluralize }}
+                            </div>
+                            
+                            <!-- Notifications -->
+                            <div class="dropdown">
+                                <button class="btn btn-light position-relative" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="notification-badge">3</span>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 320px;">
+                                    <h6 class="dropdown-header fw-bold">Notificações Recentes</h6>
+                                    <div class="notification-item unread">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong class="d-block">João Silva</strong>
+                                                <small class="text-muted">Realizou um novo pedido: #ORD-7842</small>
+                                            </div>
+                                            <small class="text-muted">2 min</small>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong class="d-block">Maria Santos</strong>
+                                                <small class="text-muted">Cadastrou novo cliente: Tech Solutions</small>
+                                            </div>
+                                            <small class="text-muted">5 min</small>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong class="d-block">Carlos Lima</strong>
+                                                <small class="text-muted">Pedido #ORD-7841 atualizado</small>
+                                            </div>
+                                            <small class="text-muted">15 min</small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown-divider my-2"></div>
+                                    <a href="#" class="dropdown-item text-center text-primary fw-medium">
+                                        Ver todas as notificações
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                {% if messages %}
+                <div class="mb-4 fade-in">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}times-circle{% else %}info-circle{% endif %} me-2"></i>
+                            <div class="fw-medium">{{ message }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Quick Actions -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-md-12">
+                        <div class="admin-card p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                <h6 class="mb-0 fw-bold text-dark">Ações Rápidas</h6>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>
+                                        Adicionar Usuário
+                                    </button>
+                                    <button class="btn btn-outline-primary">
+                                        <i class="fas fa-file-export me-2"></i>
+                                        Exportar Dados
+                                    </button>
+                                    <button class="btn btn-outline-secondary">
+                                        <i class="fas fa-sync-alt me-2"></i>
+                                        Atualizar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card admin-card mb-4 fade-in">
+                    <div class="card-header">
+                        <h6 class="m-0 fw-bold">
+                            <i class="fas fa-filter me-2 text-primary"></i>
+                            Filtros e Ordenação
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="busca" class="form-label fw-medium">Buscar Usuários</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" id="busca" name="busca" 
+                                           value="{{ busca }}" placeholder="Nome, usuário ou email...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="tipo" class="form-label fw-medium">Tipo de Usuário</label>
+                                <select class="form-select" id="tipo" name="tipo">
+                                    <option value="todos" {% if tipo_usuario == 'todos' %}selected{% endif %}>Todos os Usuários</option>
+                                    <option value="staff" {% if tipo_usuario == 'staff' %}selected{% endif %}>Staff</option>
+                                    <option value="superusers" {% if tipo_usuario == 'superusers' %}selected{% endif %}>Superusers</option>
+                                    <option value="ativos" {% if tipo_usuario == 'ativos' %}selected{% endif %}>Ativos</option>
+                                    <option value="inativos" {% if tipo_usuario == 'inativos' %}selected{% endif %}>Inativos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="ordenar_por" class="form-label fw-medium">Ordenar por</label>
+                                <select class="form-select" id="ordenar_por" name="ordenar_por">
+                                    <option value="-date_joined" {% if ordenar_por == '-date_joined' %}selected{% endif %}>Data de Cadastro (Mais Recente)</option>
+                                    <option value="date_joined" {% if ordenar_por == 'date_joined' %}selected{% endif %}>Data de Cadastro (Mais Antigo)</option>
+                                    <option value="username" {% if ordenar_por == 'username' %}selected{% endif %}>Nome de Usuário (A-Z)</option>
+                                    <option value="-username" {% if ordenar_por == '-username' %}selected{% endif %}>Nome de Usuário (Z-A)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100 py-2">
+                                    <i class="fas fa-filter me-2"></i>
+                                    Aplicar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="card admin-card fade-in">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 fw-bold text-dark">
+                                <i class="fas fa-list me-2 text-primary"></i>
+                                Lista de Usuários
+                            </h6>
+                            <div class="text-muted small fw-medium">
+                                Mostrando {{ usuarios_com_stats|length }} de {{ total_usuarios }} usuário{{ total_usuarios|pluralize }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if usuarios_com_stats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Usuário</th>
+                                        <th>Informações</th>
+                                        <th>Estatísticas</th>
+                                        <th>Status</th>
+                                        <th class="pe-4 text-end">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in usuarios_com_stats %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-3">
+                                                    {{ item.usuario.username|first|upper }}
+                                                </div>
+                                                <div>
+                                                    <strong class="d-block text-dark">{{ item.usuario.username }}</strong>
+                                                    <small class="text-muted">{{ item.usuario.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <div class="mb-1">
+                                                    <strong class="text-dark">Nome:</strong> 
+                                                    {% if item.usuario.first_name %}
+                                                        {{ item.usuario.first_name }} {{ item.usuario.last_name }}
+                                                    {% else %}
+                                                        <span class="text-muted">Não informado</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <strong class="text-dark">Cadastro:</strong> 
+                                                    {{ item.usuario.date_joined|date:"d/m/Y" }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <div class="mb-1">
+                                                    <strong class="text-dark">Vendas:</strong> 
+                                                    <span class="badge bg-primary rounded-pill">{{ item.stats.total_vendas }}</span>
+                                                </div>
+                                                <div>
+                                                    <strong class="text-dark">Última:</strong> 
+                                                    {% if item.stats.ultima_venda %}
+                                                        {{ item.stats.ultima_venda|date:"d/m/Y" }}
+                                                    {% else %}
+                                                        <span class="text-muted">Nenhuma</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column gap-2">
+                                                {% if item.usuario.is_superuser %}
+                                                    <span class="badge badge-superuser">Superuser</span>
+                                                {% elif item.usuario.is_staff %}
+                                                    <span class="badge badge-staff">Staff</span>
+                                                {% else %}
+                                                    <span class="badge badge-user">Usuário</span>
+                                                {% endif %}
+                                                
+                                                {% if item.usuario.is_active %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border-0">
+                                                        <span class="status-indicator status-active"></span>
+                                                        Ativo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border-0">
+                                                        <span class="status-indicator status-inactive"></span>
+                                                        Inativo
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="pe-4 text-end">
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info" title="Detalhes">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if item.usuario.is_active %}
+                                                <button class="btn btn-sm btn-outline-warning" title="Desativar">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-outline-success" title="Ativar">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-users-slash text-muted fa-4x mb-4"></i>
+                            <h5 class="text-muted mb-3">Nenhum usuário encontrado</h5>
+                            <p class="text-muted mb-4">Tente ajustar os filtros de busca ou adicionar novos usuários</p>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                Adicionar Usuário
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                {% if usuarios_com_stats and usuarios_com_stats|length >= 10 %}
+                <nav class="mt-4 fade-in">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal fade stats-modal" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statsModalLabel">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estatísticas Completas do Sistema
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Quick Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card">
+                                <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                                <h4 class="mb-1">42</h4>
+                                <p class="text-muted mb-0">Pedidos Hoje</p>
+                                <small class="text-success">+12% vs ontem</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card">
+                                <i class="fas fa-users fa-2x text-success mb-2"></i>
+                                <h4 class="mb-1">{{ total_usuarios }}</h4>
+                                <p class="text-muted mb-0">Usuários Ativos</p>
+                                <small class="text-success">+2 esta semana</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card">
+                                <i class="fas fa-dollar-sign fa-2x text-warning mb-2"></i>
+                                <h4 class="mb-1">R$ 12.458</h4>
+                                <p class="text-muted mb-0">Faturamento</p>
+                                <small class="text-success">+8% vs mês passado</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card">
+                                <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                                <h4 class="mb-1">15 min</h4>
+                                <p class="text-muted mb-0">Tempo Médio</p>
+                                <small class="text-danger">-3 min vs semana passada</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                                    Vendas por Usuário (Últimos 7 dias)
+                                </h6>
+                                <div class="text-center py-4 border rounded bg-light">
+                                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Gráfico de vendas por usuário</p>
+                                    <small class="text-muted">(Integração com biblioteca de gráficos)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-chart-pie me-2 text-success"></i>
+                                    Distribuição de Pedidos
+                                </h6>
+                                <div class="text-center py-4 border rounded bg-light">
+                                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Gráfico de distribuição</p>
+                                    <small class="text-muted">(Integração com biblioteca de gráficos)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="chart-container">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-list-alt me-2 text-info"></i>
+                                    Atividade Recente
+                                </h6>
+                                <div class="list-group">
+                                    <div class="list-group-item border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>João Silva</strong> realizou novo pedido <span class="badge bg-primary">#ORD-7842</span>
+                                            </div>
+                                            <small class="text-muted">2 minutos atrás</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Maria Santos</strong> cadastrou novo cliente
+                                            </div>
+                                            <small class="text-muted">5 minutos atrás</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Carlos Lima</strong> atualizou pedido <span class="badge bg-warning">#ORD-7841</span>
+                                            </div>
+                                            <small class="text-muted">15 minutos atrás</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Relatório
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mobile sidebar toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        });
+
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+        });
+
+        // Auto-dismiss alerts
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Add subtle animations to cards on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.admin-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Simulate new notification
+            setTimeout(() => {
+                const badge = document.querySelector('.notification-badge');
+                if (badge) {
+                    badge.textContent = '4';
+                }
+            }, 3000);
+        });
+
+        // Search highlighting
+        const searchInput = document.getElementById('busca');
+        if (searchInput && searchInput.value) {
+            const searchTerm = searchInput.value.toLowerCase();
+            const tableRows = document.querySelectorAll('tbody tr');
+            
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.backgroundColor = 'rgba(255, 243, 205, 0.3)';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

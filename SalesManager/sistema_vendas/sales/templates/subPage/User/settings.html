@@ -1,0 +1,950 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesManager - Configurações Staff</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'sales/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'sales/css/user_profile.css' %}">
+
+    <style>
+        .staff-config-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .code-input-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .code-input {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            width: 100%;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .code-input:focus {
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            background: white;
+        }
+
+        .code-input.valid {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .code-input.invalid {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4361ee;
+        }
+
+        .instructions h4 {
+            color: #4361ee;
+            margin-bottom: 10px;
+        }
+
+        /* Botão de Ativação */
+        .btn-activate {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-activate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-activate:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-staff-active {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            animation: pulse 2s infinite;
+        }
+
+        .btn-staff-active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+        /* Efeito de confete */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            border-radius: 50%;
+            animation: confetti-fall 1s ease-out forwards;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-top: 4px solid #4361ee;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(67, 97, 238, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #4361ee;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1);
+        }
+
+        .feature-card h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            transition: all 0.5s ease;
+            animation: badge-appear 0.6s ease-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes badge-appear {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .badge-active {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            animation: badge-pulse 2s infinite;
+        }
+
+        .badge-inactive {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        @keyframes badge-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+
+        .btn-staff {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #4361ee, #3a56d4);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn-staff:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+
+        .success-animation {
+            animation: success-bounce 0.6s ease-out;
+        }
+
+        @keyframes success-bounce {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .notification-banner {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+            animation: slideDown 0.5s ease-out;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slideDown {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .notification-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .activation-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .activation-info p {
+            margin: 8px 0;
+            color: #2d3748;
+        }
+
+        .activation-info strong {
+            color: #4361ee;
+        }
+
+        .code-validation {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .validation-valid {
+            color: #28a745;
+        }
+
+        .validation-invalid {
+            color: #dc3545;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #4361ee;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4361ee;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-header h2 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .profile-header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        /* Estilos para os botões administrativos */
+        .admin-access-card {
+            background: linear-gradient(135deg, #6f42c1, #5a2d9c);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(111, 66, 193, 0.3);
+        }
+
+        .btn-admin {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .btn-admin:hover {
+            background: white;
+            color: #6f42c1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div>
+                <h1>SalesManager</h1>
+                <span style="color: #808080;font-size: 14px;">Configurações Staff</span>
+            </div>
+        </div>
+
+        <div class="user-menu">
+            <div class="avatar-button" id="avatarButton">
+                {{ user.username|first|upper }}
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="user-profile">
+                    <div class="user-name">{{ user.username }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                </div>
+                <a href="{% url 'sales:user_profile' %}" class="dropdown-item">
+                    <i class="fas fa-user"></i> Meu Perfil
+                </a>
+                <a href="{% url 'sales:user_settings' %}" class="dropdown-item">
+                    <i class="fas fa-cog"></i> Configurações
+                </a>
+                <a href="{% url 'sales:change_password' %}" class="dropdown-item">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'sales:dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="{% url 'sales:logout' %}" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="profile-container">
+            <div class="profile-header">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #2d3748;">
+                    <i class="fas fa-key"></i> Ativar Modo Staff
+                </h3>
+                <p>Gerencie suas permissões e acesse funcionalidades avançadas</p>
+            </div>
+
+            <div class="staff-config-container">
+                <!-- Status Atual -->
+                <div class="profile-card" style="text-align: center; margin-bottom: 30px;">
+                    <h3>Status Atual</h3>
+                    <div class="status-badge {% if user.is_staff %}badge-active{% else %}badge-inactive{% endif %}"
+                        id="statusBadge">
+                        {% if user.is_staff %}
+                        <i class="fas fa-check-circle"></i> Modo Staff Ativo
+                        {% else %}
+                        <i class="fas fa-lock"></i> Modo Staff Inativo
+                        {% endif %}
+                    </div>
+
+                    <!-- Banner de notificação -->
+                    {% if staff_activated %}
+                    <div class="notification-banner notification-success" id="activationBanner">
+                        <i class="fas fa-check-circle"></i>
+                        {% if codigo_usado %}
+                        {{ codigo_usado }} ativado com sucesso!
+                        {% else %}
+                        Modo staff ativado com sucesso!
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if staff_deactivated %}
+                    <div class="notification-banner notification-info" id="deactivationBanner">
+                        <i class="fas fa-info-circle"></i> Modo staff desativado.
+                    </div>
+                    {% endif %}
+                </div>
+
+
+                {% if not user.is_staff %}
+                <!-- Formulário de Ativação -->
+                <div class="code-input-container">
+                    <form method="post" action="{% url 'sales:ativar_modo_staff' %}" id="staffForm">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 20px;">
+                            <label for="codigo_ativacao"
+                                style="display: block; margin-bottom: 10px; font-weight: 600; color: #2d3748;">
+                                <i class="fas fa-ticket-alt"></i> Código de Ativação:
+                            </label>
+                            <input type="text" id="codigo_ativacao" name="codigo_ativacao" class="code-input"
+                                placeholder="DIGITE O CÓDIGO AQUI" required maxlength="20" autocomplete="off">
+                            <div class="code-validation" id="codeValidation">
+                                <i class="fas fa-check"></i> <span>Código válido</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-activate" id="activateBtn">
+                            <i class="fas fa-unlock-alt"></i> Ativar Modo Staff
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Funcionalidades que serão desbloqueadas -->
+                <div class="profile-card">
+                    <h3 style="text-align: center; margin-bottom: 20px; color: #2d3748;">
+                        <i class="fas fa-gift"></i> Funcionalidades que serão desbloqueadas
+                    </h3>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <h4>Gestão de Vendas</h4>
+                            <p>Cadastre, visualize e gerencie todas as suas vendas de forma eficiente</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4>Dashboard Completo</h4>
+                            <p>Acesse métricas detalhadas e relatórios avançados em tempo real</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-file-export"></i>
+                            </div>
+                            <h4>Exportação de Dados</h4>
+                            <p>Exporte relatórios em CSV e PDF para análise externa</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h4>Gestão de Clientes</h4>
+                            <p>Controle completo do histórico e perfil de clientes</p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Usuário já é staff - Estado Ativo -->
+                <div class="profile-card success-animation"
+                    style="text-align: center; background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1px solid #c3e6cb;"
+                    id="staffActiveCard">
+                    <div style="font-size: 4rem; color: #28a745; margin-bottom: 20px;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 style="color: #155724;">Modo Staff Ativado!</h3>
+                    <p style="color: #155724; margin-bottom: 20px; font-size: 1.1rem;">
+                        Você já tem acesso completo às funcionalidades de vendedor do sistema.
+                    </p>
+
+                    <!-- Informações do Código Utilizado -->
+                    {% if codigo_info or codigo_usado %}
+                    <div class="activation-info">
+                        <h4 style="color: #155724; margin-bottom: 15px;">
+                            <i class="fas fa-info-circle"></i> Informações da Ativação
+                        </h4>
+                        {% if codigo_info %}
+                        <p><strong>Tipo:</strong> {{ codigo_info.nome }}</p>
+                        <p><strong>Nível:</strong> {{ codigo_info.nivel|title }}</p>
+                        {% elif codigo_usado %}
+                        <p><strong>Tipo:</strong> {{ codigo_usado }}</p>
+                        {% endif %}
+                        <p><strong>Ativado em:</strong> {% now "d/m/Y à\s H:i" %}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botão para sair do modo staff -->
+                    <form method="post" action="{% url 'sales:desativar_modo_staff' %}" style="margin: 20px 0;"
+                        id="deactivateForm">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-activate btn-staff-active" id="deactivateBtn">
+                            <i class="fas fa-lock"></i> Sair do Modo Staff
+                        </button>
+                    </form>
+
+                    <div class="action-buttons" style="justify-content: center; margin-top: 20px;">
+                        <a href="{% url 'sales:dashboard' %}" class="btn-staff">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Ir para Dashboard
+                        </a>
+                        <a href="{% url 'sales:cadastrar_venda' %}" class="btn-staff"
+                            style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                            <i class="fas fa-plus me-2"></i>
+                            Nova Venda
+                        </a>
+                        <a href="{% url 'sales:lista_vendas' %}" class="btn-staff"
+                            style="background: linear-gradient(135deg, #6f42c1, #5a2d9c);">
+                            <i class="fas fa-list me-2"></i>
+                            Ver Vendas
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+  <!-- Botão de Gerenciamento de Usuários (APENAS PARA ADMINISTRADORES) -->
+                {% if user.is_superuser %}
+                <div class="admin-access-card">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 style="margin-bottom: 10px;">Acesso Administrativo</h3>
+                    <p style="margin-bottom: 20px; opacity: 0.9;">
+                        Você possui privilégios de administrador no sistema
+                    </p>
+
+                    <div class="action-buttons" style="justify-content: center; gap: 15px;">
+                        <a href="{% url 'sales:gerenciar_usuarios' %}" class="btn-admin">
+                            <i class="fas fa-users-cog me-2"></i>
+                            Gerenciar Usuários
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Mensagens do Django -->
+                {% if messages %}
+                <div class="alert-container" style="margin-top: 20px;">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}"
+                        style="margin: 10px 0; padding: 15px; border-radius: 8px; border: 1px solid transparent;">
+                        <i
+                            class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <div style="padding: 20px;"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <nav class="footer-nav">
+            <a href="{% url 'sales:dashboard' %}" class="footer-button">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'sales:user_settings' %}" class="footer-button active">
+                <i class="fas fa-cog"></i>
+                <span>Configurações</span>
+            </a>
+            <a href="{% url 'sales:user_profile' %}" class="footer-button">
+                <i class="fas fa-user"></i>
+                <span>Perfil</span>
+            </a>
+        </nav>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const avatarButton = document.getElementById('avatarButton');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const codeInput = document.getElementById('codigo_ativacao');
+            const activateBtn = document.getElementById('activateBtn');
+            const deactivateBtn = document.getElementById('deactivateBtn');
+            const statusBadge = document.getElementById('statusBadge');
+            const staffActiveCard = document.getElementById('staffActiveCard');
+            const activationBanner = document.getElementById('activationBanner');
+            const deactivationBanner = document.getElementById('deactivationBanner');
+            const codeValidation = document.getElementById('codeValidation');
+
+            // Menu de usuário
+            if (avatarButton && dropdownMenu) {
+                avatarButton.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!avatarButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Formatação e validação do código de ativação
+            if (codeInput) {
+                codeInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
+                    e.target.value = value;
+
+                    // Validação em tempo real
+                    validateCode(value);
+                });
+
+                codeInput.addEventListener('blur', function () {
+                    const value = this.value.trim();
+                    validateCode(value);
+                });
+
+                // Auto-focus apenas se não for staff
+                {% if not user.is_staff %}
+                setTimeout(() => {
+                    if (codeInput) codeInput.focus();
+                }, 500);
+                {% endif %}
+            }
+
+            // Função de validação de código
+            function validateCode(code) {
+                if (!codeValidation) return;
+
+                if (code.length === 0) {
+                    codeValidation.style.display = 'none';
+                    codeInput.classList.remove('valid', 'invalid');
+                    return;
+                }
+
+                // Lista de códigos válidos conhecidos
+                const validCodes = [
+                    '88OE-112M-NN21-AH22',
+                    'STAFF-2024-ACESSO',
+                    'VEND-2024-BASICO',
+                    'TEMP-30DIAS-2024',
+                    'TESTE-12345-ABCDE'
+                ];
+
+                // Padrões dinâmicos
+                const patterns = [
+                    /^VEND-\d{5}$/, // VEND-12345
+                    /^[A-Z]{4}-\d{4}-[A-Z0-9]{4}$/, // ABCD-1234-EF56
+                    /^[A-Z0-9]{10}$/ // Códigos de 10 caracteres alfanuméricos
+                ];
+
+                const isValid = validCodes.includes(code) || patterns.some(pattern => pattern.test(code));
+
+                if (isValid) {
+                    codeInput.classList.add('valid');
+                    codeInput.classList.remove('invalid');
+                    codeValidation.className = 'code-validation validation-valid';
+                    codeValidation.innerHTML = '<i class="fas fa-check"></i> Código válido';
+                    codeValidation.style.display = 'block';
+                } else {
+                    codeInput.classList.add('invalid');
+                    codeInput.classList.remove('valid');
+                    codeValidation.className = 'code-validation validation-invalid';
+                    codeValidation.innerHTML = '<i class="fas fa-times"></i> Código inválido ou desconhecido';
+                    codeValidation.style.display = 'block';
+                }
+            }
+
+            // ========== ATIVAÇÃO DO STAFF ==========
+            const staffForm = document.getElementById('staffForm');
+            if (staffForm && activateBtn) {
+                staffForm.addEventListener('submit', function (e) {
+                    const code = codeInput ? codeInput.value.trim() : '';
+                    if (code.length === 0) {
+                        e.preventDefault();
+                        showNotification('Por favor, insira um código de ativação', 'error');
+                        return;
+                    }
+
+                    activateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Ativando...';
+                    activateBtn.disabled = true;
+
+                    // Simular efeito de confete durante o loading
+                    createConfetti();
+                });
+            }
+
+            // ========== DESATIVAÇÃO DO STAFF ==========
+            if (deactivateBtn) {
+                deactivateBtn.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-2px) scale(1.05)';
+                });
+
+                deactivateBtn.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+
+                const deactivateForm = document.getElementById('deactivateForm');
+                if (deactivateForm) {
+                    deactivateForm.addEventListener('submit', function (e) {
+                        if (!confirm('Tem certeza que deseja sair do modo staff? Você perderá acesso às funcionalidades de vendedor.')) {
+                            e.preventDefault();
+                        } else {
+                            deactivateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Desativando...';
+                            deactivateBtn.disabled = true;
+                        }
+                    });
+                }
+            }
+
+            // ========== ANIMAÇÕES E EFEITOS VISUAIS ==========
+            function createConfetti() {
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffd700', '#ff8c00'];
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                        confetti.style.width = (Math.random() * 12 + 5) + 'px';
+                        confetti.style.height = (Math.random() * 12 + 5) + 'px';
+                        confetti.style.opacity = Math.random() * 0.7 + 0.3;
+                        document.body.appendChild(confetti);
+
+                        setTimeout(() => {
+                            if (confetti.parentNode) {
+                                confetti.remove();
+                            }
+                        }, 1500);
+                    }, i * 50);
+                }
+            }
+
+            function showNotification(message, type = 'info') {
+                // Implementação simples de notificação
+                console.log(`${type.toUpperCase()}: ${message}`);
+            }
+
+            // ========== VERIFICAÇÃO DE ESTADO RECENTE ==========
+            {% if staff_activated %}
+            console.log('Staff ativado recentemente - executando animações...');
+
+            setTimeout(() => {
+                createConfetti();
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                if (statusBadge) {
+                    statusBadge.style.animation = 'badge-appear 0.6s ease-out, badge-pulse 2s infinite';
+                }
+
+            }, 800);
+            {% endif %}
+
+            {% if staff_deactivated %}
+            console.log('Staff desativado recentemente - atualizando interface...');
+
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 500);
+            {% endif %}
+
+            // Efeito de sucesso quando a página carrega com staff ativo
+            if (statusBadge && statusBadge.classList.contains('badge-active') && !{% if staff_activated %}true{% else %}false{% endif %}) {
+            statusBadge.style.animation = 'badge-appear 0.6s ease-out, badge-pulse 2s infinite';
+
+            setTimeout(() => {
+                createConfetti();
+            }, 1000);
+        }
+
+        // ========== AUTO-REMOVER BANNERS ==========
+        if (activationBanner) {
+            setTimeout(() => {
+                activationBanner.style.opacity = '0';
+                activationBanner.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (activationBanner.parentNode) {
+                        activationBanner.remove();
+                    }
+                }, 500);
+            }, 6000);
+        }
+
+        if (deactivationBanner) {
+            setTimeout(() => {
+                deactivationBanner.style.opacity = '0';
+                deactivationBanner.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (deactivationBanner.parentNode) {
+                        deactivationBanner.remove();
+                    }
+                }, 500);
+            }, 5000);
+        }
+
+        // ========== ANIMAÇÕES ADICIONAIS ==========
+        // Animação de digitação para placeholder
+        if (codeInput) {
+            const placeholderText = "DIGITE O CÓDIGO AQUI";
+            let i = 0;
+
+            function typeWriter() {
+                if (i < placeholderText.length) {
+                    codeInput.setAttribute('placeholder', placeholderText.substring(0, i + 1));
+                    i++;
+                    setTimeout(typeWriter, 100);
+                } else {
+                    setTimeout(() => {
+                        i = 0;
+                        codeInput.setAttribute('placeholder', '');
+                        setTimeout(typeWriter, 1000);
+                    }, 2000);
+                }
+            }
+
+            // Iniciar animação após um delay
+            setTimeout(typeWriter, 1000);
+        }
+        });
+    </script>
+</body>
+
+</html>

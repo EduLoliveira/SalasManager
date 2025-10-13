@@ -43,13 +43,14 @@
                     <div class="user-email">{{ user.email }}</div>
                 </div>
 
-                <a href="#" class="dropdown-item">
+                <!-- LINKS CORRIGIDOS - Agora funcionais -->
+                <a href="{% url 'sales:user_profile' %}" class="dropdown-item">
                     <i class="fas fa-user"></i> Meu Perfil
                 </a>
-                <a href="#" class="dropdown-item">
+                <a href="{% url 'sales:user_settings' %}" class="dropdown-item">
                     <i class="fas fa-cog"></i> Configurações
                 </a>
-                <a href="#" class="dropdown-item">
+                <a href="{% url 'sales:change_password' %}" class="dropdown-item">
                     <i class="fas fa-key"></i> Alterar Senha
                 </a>
                 <div class="dropdown-divider"></div>
@@ -63,7 +64,8 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Filtro por Mês -->
-        <div class="filter-container">
+        {% if user.is_staff %}
+        <div class="filter-container" style="padding: 15px 0px;">
             <div class="filter-title">Filtros do Dashboard</div>
             <div class="month-filter">
                 <button class="filter-button" id="monthFilterButton">
@@ -109,7 +111,8 @@
                 </div>
             </div>
         </div>
-
+        {% endif %}
+        
         <div class="dashboard-grid">
             <div class="stat-box today-sales" style="background-color: var(--primary-color);">
                 <div class="stat-icon" style="top: 8%;">
@@ -150,9 +153,12 @@
         <div class="chart-container">
             <div class="chart-header">
                 <h3>Vendas por período</h3>
+                {% if user.is_staff %}
+
                 <a href="{% url 'sales:relatorio_vendas' %}" class="detailed-report-button">
                     <i class="fas fa-chart-bar"></i> Relatório de Vendas
                 </a>
+                {% endif %}
             </div>
             <div class="chart-wrapper">
                 <canvas id="salesChart"></canvas>

@@ -19,6 +19,7 @@
 
 <body>
 
+    <!-- NOTIFICAÇÃO DE SUCESSO (ESTRUTURA ORIGINAL) -->
     <div id="successNotification" class="notification">
         <div class="notification-header">
             <div class="notification-title">
@@ -214,8 +215,324 @@
         </nav>
     </footer>
 
-    <script src="{% static 'sales/js/func.js' %}"></script>
-    <script src="{% static 'sales/js/details.js' %}"></script>
+
+    <!-- CSS PARA A NOTIFICAÇÃO -->
+    <style>
+    .notification {
+        display: none;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-left: 4px solid #10b981;
+        z-index: 1000;
+        max-width: 500px;
+        animation: slideInRight 0.3s ease;
+    }
+    
+    .notification.show {
+        display: block;
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px 0;
+        margin-bottom: 12px;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        color: #065f46;
+        font-size: 16px;
+    }
+    
+    .notification-title i {
+        color: #10b981;
+        margin-right: 8px;
+    }
+    
+    .notification-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 4px;
+    }
+    
+    .notification-close:hover {
+        color: #374151;
+    }
+    
+    .notification-content {
+        padding: 0 20px 16px;
+    }
+    
+    .notification-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 4px 0;
+    }
+    
+    .notification-label {
+        font-weight: 500;
+        color: #4b5563;
+    }
+    
+    .notification-value {
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .notification-progress {
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 0 0 12px 12px;
+        overflow: hidden;
+    }
+    
+    .notification-progress-bar {
+        height: 100%;
+        background: #10b981;
+        width: 100%;
+        transform-origin: left;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes notificationProgress {
+        from {
+            transform: scaleX(1);
+        }
+        to {
+            transform: scaleX(0);
+        }
+    }
+    </style>
+
+    <!-- JAVASCRIPT INCORPORADO NO HTML -->
+    <script>
+    // Função para obter o cookie CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Função para mostrar a notificação
+    function showNotification(vendaData) {
+        const notification = document.getElementById('successNotification');
+        
+        console.log('📢 Exibindo notificação com dados:', vendaData);
+        
+        if (!notification) {
+            console.error('❌ Elemento da notificação não encontrado');
+            return;
+        }
+        
+        // Preencher os dados da notificação
+        const clienteElement = document.getElementById('notif-cliente');
+        const quantidadeElement = document.getElementById('notif-quantidade');
+        const valorElement = document.getElementById('notif-valor');
+        const dataElement = document.getElementById('notif-data');
+        
+        if (clienteElement) clienteElement.textContent = vendaData.cliente || 'Não informado';
+        if (quantidadeElement) quantidadeElement.textContent = vendaData.quantidade || 'Não informado';
+        if (valorElement) valorElement.textContent = vendaData.valor ? 'R$ ' + parseFloat(vendaData.valor).toFixed(2) : 'Não informado';
+        if (dataElement) dataElement.textContent = vendaData.data_venda || vendaData.data || 'Não informado';
+        
+        // Mostrar a notificação com animação
+        notification.classList.add('show');
+        
+        // Reiniciar animação da barra de progresso
+        const progressBar = document.querySelector('.notification-progress-bar');
+        if (progressBar) {
+            progressBar.style.animation = 'none';
+            setTimeout(() => {
+                progressBar.style.animation = 'notificationProgress 10s linear forwards';
+            }, 10);
+        }
+        
+        // Auto-esconder após 10 segundos
+        window.notificationTimeout = setTimeout(hideNotification, 10000);
+    }
+
+    // Função para esconder a notificação
+    function hideNotification() {
+        const notification = document.getElementById('successNotification');
+        if (notification) {
+            notification.classList.remove('show');
+        }
+        if (window.notificationTimeout) {
+            clearTimeout(window.notificationTimeout);
+        }
+        
+        // Limpar a sessão
+        fetch('/clear_venda_session/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        }).catch(error => console.error('Error ao limpar sessão:', error));
+    }
+
+    // Aguarda o documento carregar completamente
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🔍 Iniciando verificação de sessão...');
+
+        // Código para o botão de filtros
+        const toggleButton = document.getElementById('toggleFiltersBtn');
+        const filtersContent = document.getElementById('filtersContent');
+
+        if (toggleButton && filtersContent) {
+            toggleButton.addEventListener('click', function () {
+                filtersContent.classList.toggle('hidden');
+                const isHidden = filtersContent.classList.contains('hidden');
+                if (isHidden) {
+                    toggleButton.innerHTML = '<i class="bi bi-sliders"></i> Visualizar Filtros';
+                } else {
+                    toggleButton.innerHTML = '<i class="bi bi-x-lg"></i> Ocultar Filtros';
+                }
+            });
+        }
+
+        // VERIFICAÇÃO DIRETA DA SESSÃO - MÉTODO ALTERNATIVO
+        console.log('🔍 Verificando sessão de venda...');
+        
+        // Método 1: Tentar buscar da API
+        fetch('/check_venda_session/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na requisição: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📦 Dados recebidos da API:', data);
+                if (data.has_venda_data && data.venda_data) {
+                    console.log('✅ Exibindo notificação via API...');
+                    showNotification(data.venda_data);
+                } else {
+                    console.log('ℹ️ Nenhuma venda encontrada na sessão via API');
+                    // Tentar método alternativo se a API falhar
+                    checkSessionAlternative();
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao verificar sessão via API:', error);
+                // Tentar método alternativo
+                checkSessionAlternative();
+            });
+
+        // Método alternativo: Verificar se há dados passados pelo Django
+        function checkSessionAlternative() {
+            console.log('🔄 Tentando método alternativo...');
+            // Se o Django passou os dados diretamente no template
+            {% if venda_sucesso %}
+                console.log('✅ Dados encontrados diretamente do Django');
+                showNotification({
+                    cliente: '{{ venda_sucesso.cliente }}',
+                    quantidade: '{{ venda_sucesso.quantidade }}',
+                    valor: '{{ venda_sucesso.valor }}',
+                    data_venda: '{{ venda_sucesso.data_venda }}'
+                });
+            {% else %}
+                console.log('ℹ️ Nenhum dado encontrado no template');
+            {% endif %}
+        }
+
+        // Evento de submit ao pressionar Enter na busca
+        const searchInput = document.querySelector('input[name="busca"]');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.form.submit();
+                }
+            });
+        }
+
+        // Submissão automática ao alterar a ordenação
+        const orderBySelect = document.getElementById('ordenar_por');
+        if (orderBySelect) {
+            orderBySelect.addEventListener('change', function () {
+                this.form.submit();
+            });
+        }
+
+        // Submissão automática ao alterar o status
+        const statusSelect = document.getElementById('status');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function () {
+                this.form.submit();
+            });
+        }
+
+        // Fechar notificação ao clicar no X
+        const closeBtn = document.querySelector('.notification-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', hideNotification);
+        }
+
+        // Também fechar notificação ao clicar na barra de progresso
+        const progressBar = document.querySelector('.notification-progress');
+        if (progressBar) {
+            progressBar.addEventListener('click', hideNotification);
+        }
+
+        // Botão para expandir/contrair lista de vendas
+        const toggleListBtn = document.getElementById('toggleListBtn');
+        const vendasContainer = document.getElementById('vendasContainer');
+        
+        if (toggleListBtn && vendasContainer) {
+            toggleListBtn.addEventListener('click', function() {
+                const isExpanded = vendasContainer.style.maxHeight === 'none';
+                
+                if (isExpanded) {
+                    // Contrair
+                    vendasContainer.style.maxHeight = '400px';
+                    vendasContainer.style.overflow = 'hidden';
+                    toggleListBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Exibir todos os clientes';
+                } else {
+                    // Expandir
+                    vendasContainer.style.maxHeight = 'none';
+                    vendasContainer.style.overflow = 'visible';
+                    toggleListBtn.innerHTML = '<i class="bi bi-chevron-up"></i> Ocultar lista';
+                }
+            });
+            
+            // Inicializar com altura limitada
+            vendasContainer.style.maxHeight = '400px';
+            vendasContainer.style.overflow = 'hidden';
+        }
+    });
+
+    console.log('✅ JavaScript incorporado carregado com sucesso');
+    </script>
 
 </body>
 

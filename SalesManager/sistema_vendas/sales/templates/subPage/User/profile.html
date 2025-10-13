@@ -1,0 +1,395 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesManager - Meu Perfil</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'sales/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'sales/css/user_profile.css' %}">
+    
+    <style>
+        /* Estilos para campos somente leitura */
+        .readonly-field {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+            color: #495057;
+            cursor: not-allowed;
+        }
+
+        .readonly-field:focus {
+            border-color: #e9ecef;
+            box-shadow: none;
+        }
+
+        .field-info {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-info i {
+            color: #17a2b8;
+        }
+
+        .info-badge {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .badge-staff {
+            background: linear-gradient(135deg, #fd7e14, #e55a00);
+        }
+
+        .badge-gerente {
+            background: linear-gradient(135deg, #6f42c1, #5a2d9c);
+        }
+
+        .badge-vendedor {
+            background: linear-gradient(135deg, #20c997, #17a2b8);
+        }
+
+        .badge-basico {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .username-info {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .username-info i {
+            margin-right: 8px;
+        }
+
+        .status-ativa {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-inativa {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        /* Estilo para campos desabilitados */
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #495057;
+        }
+
+        .profile-avatar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+
+        .user-role {
+            margin-top: 10px;
+        }
+
+        .permissions-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #4361ee;
+        }
+
+        .permissions-info h4 {
+            margin-bottom: 10px;
+            color: #4361ee;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .permission-item i {
+            margin-right: 8px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .permission-true {
+            color: #28a745;
+        }
+
+        .permission-false {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div>
+                <h1>SalesManager</h1>
+                <span style="color: #808080;font-size: 14px;">Meu Perfil</span>
+            </div>
+        </div>
+
+        <div class="user-menu">
+            <div class="avatar-button" id="avatarButton">
+                {{ user.username|first|upper }}
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="user-profile">
+                    <div class="user-name">{{ user.username }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                </div>
+                <a href="{% url 'sales:user_profile' %}" class="dropdown-item {% if active_tab == 'profile' %}active{% endif %}">
+                    <i class="fas fa-user"></i> Meu Perfil
+                </a>
+                <a href="{% url 'sales:user_settings' %}" class="dropdown-item {% if active_tab == 'settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i> Configurações
+                </a>
+                <a href="{% url 'sales:change_password' %}" class="dropdown-item {% if active_tab == 'password' %}active{% endif %}">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'sales:dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="{% url 'sales:logout' %}" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="profile-container">
+            <div class="profile-header">
+                <h2>Meu Perfil</h2>
+                <p>Visualize suas informações pessoais</p>
+            </div>
+
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <div class="avatar-large">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <h3>{{ user.username }}</h3>
+                    <p class="user-role">
+                        <span class="info-badge 
+                            {% if user.is_superuser %}badge-admin
+                            {% elif user.is_staff %}badge-staff
+                            {% else %}badge-basico{% endif %}">
+                            {% if user.is_superuser %}Administrador
+                            {% elif user.is_staff %}Staff
+                            {% else %}Usuário Básico{% endif %}
+                        </span>
+                    </p>
+                </div>
+
+                <form method="post" class="profile-form">
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                    <div class="alert-container">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name">Nome</label>
+                            <input type="text" 
+                                   id="first_name" 
+                                   name="first_name" 
+                                   class="form-control readonly-field" 
+                                   value="{{ user.first_name }}" 
+                                   readonly
+                                   placeholder="Seu nome">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="last_name">Sobrenome</label>
+                            <input type="text" 
+                                   id="last_name" 
+                                   name="last_name" 
+                                   class="form-control readonly-field" 
+                                   value="{{ user.last_name }}" 
+                                   readonly
+                                   placeholder="Seu sobrenome">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               class="form-control readonly-field" 
+                               value="{{ user.email }}" 
+                               readonly
+                               placeholder="seu@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefone">Telefone</label>
+                        <input type="text" 
+                               id="telefone" 
+                               name="telefone" 
+                               class="form-control readonly-field" 
+                               value="{{ user.telefone }}" 
+                               readonly
+                               placeholder="(00) 00000-0000">
+                        <div class="field-info">
+                            <i class="fas fa-info-circle"></i>
+                            Formato: (11) 99999-9999
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-primary disabled" disabled>
+                            <i class="fas fa-lock"></i> Dados Cadastrais - Não Editáveis
+                        </button>
+                        <a href="{% url 'sales:dashboard' %}" class="btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="profile-info-card">
+                <h3>Informações da Conta</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Username:</span>
+                        <span class="info-value">{{ user.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data de Criação:</span>
+                        <span class="info-value">{{ user.date_joined|date:"d/m/Y H:i" }}</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Status da Conta:</span>
+                        <span class="info-value">
+                            {% if user.is_active %}
+                                <span class="status-ativa">Ativa</span>
+                            {% else %}
+                                <span class="status-inativa">Inativa</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tipo de Usuário:</span>
+                        <span class="info-value">
+                            <span class="info-badge 
+                                {% if user.is_superuser %}badge-admin
+                                {% elif user.is_staff %}badge-staff
+                                {% else %}badge-basico{% endif %}">
+                                {% if user.is_superuser %}Administrador
+                                {% elif user.is_staff %}Staff
+                                {% else %}Usuário Básico{% endif %}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Último Login:</span>
+                        <span class="info-value">{{ user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div>
+        <br>
+    </div>
+    <!-- Footer -->
+    <footer class="footer">
+        <nav class="footer-nav">
+            <a href="{% url 'sales:dashboard' %}" class="footer-button">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'sales:lista_vendas' %}" class="footer-button">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Vendas</span>
+            </a>
+            <a href="{% url 'sales:cadastrar_venda' %}" class="footer-button">
+                <i class="fas fa-plus-circle"></i>
+                <span>Cadastrar</span>
+            </a>
+        </nav>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const avatarButton = document.getElementById('avatarButton');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+
+            // Alternar visibilidade do menu de usuário
+            if (avatarButton && dropdownMenu) {
+                avatarButton.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!avatarButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+
+                dropdownMenu.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+
+            // Prevenir envio do formulário (já que os campos são readonly)
+            const form = document.querySelector('.profile-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Os dados cadastrais não podem ser alterados diretamente. Entre em contato com o suporte para alterações.');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
