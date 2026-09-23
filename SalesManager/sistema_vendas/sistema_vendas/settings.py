@@ -12,9 +12,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =========================================================
 
-# Pega a SECRET_KEY do Environment do Render.
-# Se não existir, gera uma chave temporária para evitar
-# que a aplicação quebre durante a inicialização.
 SECRET_KEY = config(
     'SECRET_KEY',
     default=secrets.token_urlsafe(50)
@@ -37,13 +34,11 @@ ALLOWED_HOSTS = config(
     cast=Csv()
 )
 
-# Permite o domínio do Render.
-# O ".onrender.com" permite subdomínios do onrender.com.
 if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
 
-if 'salasManager.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('salasManager.onrender.com')
+if 'salasmanager.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('salasmanager.onrender.com')
 
 
 # =========================================================
@@ -69,10 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # WhiteNoise para arquivos estáticos no Render
     'whitenoise.middleware.WhiteNoiseMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -98,13 +90,10 @@ WSGI_APPLICATION = 'sistema_vendas.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-
         'DIRS': [
             os.path.join(BASE_DIR, 'templates')
         ],
-
         'APP_DIRS': True,
-
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -136,9 +125,7 @@ if DATABASE_URL.startswith('postgres'):
             ssl_require=True,
         )
     }
-
 else:
-    # Banco local para desenvolvimento
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -202,16 +189,12 @@ AUTHENTICATION_BACKENDS = [
 
 if DEBUG:
 
-    # Desenvolvimento:
-    # Os emails aparecem no terminal/log.
     EMAIL_BACKEND = (
         'django.core.mail.backends.console.EmailBackend'
     )
 
 else:
 
-    # Produção:
-    # Envio real de emails.
     EMAIL_BACKEND = (
         'django.core.mail.backends.smtp.EmailBackend'
     )
@@ -292,16 +275,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SESSION
 # =========================================================
 
-# 28 dias
 SESSION_COOKIE_AGE = 2409600
 
-# Renova a sessão a cada requisição
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Cookies seguros em produção
 SESSION_COOKIE_SECURE = not DEBUG
 
-# Impede acesso ao cookie via JavaScript
 SESSION_COOKIE_HTTPONLY = True
 
 
@@ -310,7 +289,7 @@ SESSION_COOKIE_HTTPONLY = True
 # =========================================================
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://salasManager.onrender.com',
+    'https://salasmanager.onrender.com',
     'https://*.onrender.com',
 
     'http://localhost:8000',
@@ -328,7 +307,6 @@ CSRF_USE_SESSIONS = False
 # RENDER / HTTPS
 # =========================================================
 
-# O Render trabalha com HTTPS através do proxy.
 SECURE_PROXY_SSL_HEADER = (
     'HTTP_X_FORWARDED_PROTO',
     'https'
@@ -341,15 +319,12 @@ SECURE_PROXY_SSL_HEADER = (
 
 if not DEBUG:
 
-    # Redireciona HTTP para HTTPS
     SECURE_SSL_REDIRECT = True
 
-    # HSTS
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-    # Proteções adicionais
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
 
